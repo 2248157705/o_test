@@ -1,28 +1,7 @@
 Oppo
 
-vue 脚手架：
 
-管理后台：
-
-https://github.com/JS-banana/vite-vue3-ts
-
-https://github.com/vbenjs/vue-vben-admin
-
-
-
-https://github.com/vitejs/awesome-vite#templates
-
-
-
-uni-app --- https://github.com/ttk-cli/uni-vue3-vite-ts-pinia
-
-
-
-
-
-react:
-
-https://github.com/IsaiaPhiliph/vite-reactts-tailwind-rtk-eslint
+压缩 [](https://juejin.cn/post/7044719449252823077?searchId=20250303030838A8DD69DD7338B929739A)
 
 
 
@@ -35,5 +14,11 @@ https://github.com/IsaiaPhiliph/vite-reactts-tailwind-rtk-eslint
 https://ext.dcloud.net.cn/plugin?id=2393
 
 
+
+[](https://lbs.amap.com/tools/picker)
+[](https://juejin.cn/post/7204601386608672828?searchId=20250303060717EB63CB3B1A91F61DC287)
+[](https://blog.csdn.net/qq_73720914/article/details/140325187)
+
+[](https://ext.dcloud.net.cn/plugin?id=19430)
 
 Caonima062
