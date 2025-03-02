@@ -1,0 +1,14 @@
+{
+    "id": "lyf-googleMap",
+    "name": "谷歌地图基础组件（定位当前，设置标记物，清空标记物）",
+    "displayName": "谷歌地图基础组件（定位当前，设置标记物，清空标记物）",
+    "version": "1.2",
+    "description": "亲测有效，实用。定位当前位置，设置标记物，清空标记物；点击标记物回调。",
+    "keywords": [
+        "谷歌地图,IOS,Android,H5"
+    ],
+    "dcloudext": {
+        "type": "component-vue"
+    },
+    "encrypt": []
+}
