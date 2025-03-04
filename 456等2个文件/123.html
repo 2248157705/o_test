@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps 位置搜索</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Maps 位置搜索</h1>
+    <input id="pac-input" type="text" placeholder="输入地点">
+    <div id="map"></div>
+
+    <script>
+        function initMap() {
+
+
+
+  if (navigator.geolocation) {
+                // 调用Geolocation API
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // 成功获取位置
+                        const latitude = position.coords.latitude;  // 纬度
+                        const longitude = position.coords.longitude; // 经度
+                        const accuracy = position.coords.accuracy; // 精度（米）
+
+		console.log('dddd',position.coords)
+
+                        // document.getElementById('location-info').innerHTML = `
+                        //     纬度: ${latitude}<br>
+                        //     经度: ${longitude}<br>
+                        //     精度: ${accuracy} 米
+                        // `;
+
+
+
+
+
+
+
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: {lat: position.coords.latitude, lng: position.coords.longitude}, // 默认中心点坐标（北京）
+                zoom: 12
+            });
+
+            var input = document.getElementById('pac-input');
+            var searchBox = new google.maps.places.SearchBox(input);
+
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+            map.addListener('bounds_changed', function() {
+                searchBox.setBounds(map.getBounds());
+            });
+
+            var markers = [];
+            searchBox.addListener('places_changed', function() {
+                var places = searchBox.getPlaces();
+
+                if (places.length == 0) {
+                    return;
+                }
+
+                // 清除之前的标记
+                markers.forEach(function(marker) {
+                    marker.setMap(null);
+                });
+                markers = [];
+
+                // 对于每个地点，添加标记和信息窗口
+                var bounds = new google.maps.LatLngBounds();
+                places.forEach(function(place) {
+                    if (!place.geometry) {
+                        console.log("Returned place contains no geometry");
+                        return;
+                    }
+
+                    var icon = {
+                        url: place.icon,
+                        size: new google.maps.Size(71, 71),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(17, 34),
+                        scaledSize: new google.maps.Size(25, 25)
+                    };
+
+                    // 创建标记
+                    markers.push(new google.maps.Marker({
+                        map: map,
+                        icon: icon,
+                        title: place.name,
+                        position: place.geometry.location
+                    }));
+
+                    if (place.geometry.viewport) {
+                        bounds.union(place.geometry.viewport);
+                    } else {
+                        bounds.extend(place.geometry.location);
+                    }
+                });
+                map.fitBounds(bounds);
+            });
+
+
+
+
+
+
+
+
+                    },
+                    function(error) {
+                        // 获取位置失败
+                        let errorMessage = "获取位置失败: ";
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage += "用户拒绝了位置请求。";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage += "位置信息不可用。";
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage += "请求超时。";
+                                break;
+                            case error.UNKNOWN_ERROR:
+                                errorMessage += "未知错误。";
+                                break;
+                        }
+                        document.getElementById('location-info').innerHTML = errorMessage;
+                    }
+                );
+
+
+
+        }
+		}
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyChbJQQ5ieFkKn2T5aDurZSyIxYywsMCmw&libraries=places&callback=initMap" async defer></script>
+</body>
+</html>

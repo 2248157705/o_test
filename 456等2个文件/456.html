@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H5 定位与Google地图</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>H5 定位与Google地图</h1>
+    <button id="get-location">获取我的位置</button>
+    <div id="map"></div>
+
+    <script>
+        function initMap(latitude, longitude) {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: latitude, lng: longitude },
+                zoom: 15
+            });
+
+            new google.maps.Marker({
+                position: { lat: latitude, lng: longitude },
+                map: map,
+                title: "您的位置"
+            });
+        }
+
+        document.getElementById('get-location').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+                        initMap(latitude, longitude);
+                    },
+                    function(error) {
+                        alert("获取位置失败: " + error.message);
+                    }
+                );
+            } else {
+                alert("您的浏览器不支持定位功能。");
+            }
+        });
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyChbJQQ5ieFkKn2T5aDurZSyIxYywsMCmw" async defer></script>
+</body>
+</html>
