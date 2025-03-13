@@ -14,6 +14,10 @@
 		<navigator class="buttons" url="../camera/watermark/watermark"><button type="primary">打开定制水印相机</button></navigator>
 		<view style="height: 80rpx;"></view>
 		
+		
+		
+		
+		
 	
 		
 		
@@ -21,6 +25,15 @@
 		<image  class="preview" :src="imagesrc" mode="aspectFit" style="width:710rpx:height:710rpx;margin: 20rpx;"></image>
 		
 		<canvas id="canvas-clipper" canvas-id="canvas-clipper" type="2d" :style="{width: canvasSiz.width+'px',height: canvasSiz.height+'px',position: 'absolute',left:'-500000px',top: '-500000px'}" />
+		
+		
+		
+		<view v-for="(item) in result.list" :key="item" style="border-bottom: 2rpx solid red;width: 100%;height: 100rpx;text-align: center;line-height: 100rpx;">
+			{{item}}
+		</view>
+		
+		
+		
 	</view>
 </template>
 
@@ -32,6 +45,14 @@ export default {
 
 	data() {
 		return {
+		
+			
+			result:{
+				isloading:false,
+				page:1,
+				list:50,
+				total:null
+			},
 			
 			
 	
@@ -50,6 +71,28 @@ export default {
 	},
 	mounted() {
 		console.log('mounted',)
+	},
+	onReachBottom(){
+		console.log('滚动到底部')
+		
+		if(this.result.isloading) {
+			console.log('加载中')
+			return
+		}
+		this.result.isloading=true
+		
+		new Promise((resolve,reject)=>{
+			setTimeout(()=>{
+				
+				let response={
+					total:100,
+					
+				}
+				
+				resolve()
+			},3000)
+		})
+	
 	},
 	onLoad() {
 		_this= this;

@@ -8,11 +8,14 @@
     <button @click="autoLocation">定位当前位置</button>
     <button @click="setMapMarker">添加标记物</button>
     <button @click="clearMapMarker">清空标记物</button>
+	<button @click="testCamera()">相机1</button>
+	<button @click="testAlumb()">相机</button>
   </view>
 </template>
 
 <script>
 	import LyfGoogleMap from './lyf-googleMap.vue'
+	import Permission from './permission'
   export default {
 	  components:{
 		  LyfGoogleMap,
@@ -43,7 +46,23 @@
         markers: []
       }
     },
+	
+	
     onLoad() {
+		
+	    let locationPermission=	Permission.checkSystemEnableLocation()
+		console.log('ddddd',locationPermission)
+	
+		
+		
+		let cameraPermission=Permission.checkCameraPermission()
+			console.log('dddddaaa',cameraPermission)
+				return
+		
+		
+
+		
+		
 	
 		uni.getLocation({
 			type: 'wgs84',
@@ -71,6 +90,17 @@
 		});
 	},
     methods: {
+		
+		
+		testCamera(){
+			let cameraPermission=Permission.checkCameraPermission()
+				console.log('dddddaaa',cameraPermission)
+		},
+		
+		async testAlumb(){
+			let cameraPermission=await Permission.checkPhotoLibraryPermission()
+				console.log('dddddaaa',cameraPermission)
+		},
 		
 		         reverseGeocode(latLng) {
 				                const geocoder = new google.maps.Geocoder();
