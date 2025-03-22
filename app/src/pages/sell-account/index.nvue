@@ -1,0 +1,196 @@
+<template>
+  <global-view
+    bgColor="linear-gradient(to bottom, #ffffff, #F7F9FA)"
+    bgImage="/static/images/sell/icon_ip_bg.png"
+  >
+    <view class="sell-view">
+      <view class="sell-pic" style="height: 336rpx">
+        <!-- <image
+          style="width: 686rpx; height: 336rpx"
+          src="/static/images/sell/icon_ip.png"
+        /> -->
+      </view>
+      <view class="sell-pic-type">
+        <view style="margin-right: 28rpx">
+          <image
+            style="width: 184rpx; height: 58rpx"
+            src="/static/images/sell/icon_title.png"
+          />
+        </view>
+        <view class="msg" @tap="handleCheckType">
+          <image src="/static/images/sell/icon_tips.png" class="tips" />
+          <text class="text"
+            >查看{{ sellTypeList.length }}种出售类型区别说明</text
+          >
+          <image
+            style="width: 32rpx; height: 32rpx"
+            src="/static/images/common/icon_right_bold.png"
+          />
+        </view>
+      </view>
+      <view class="sell-type">
+        <template v-for="(item, index) in sellTypeList" :key="index">
+          <view :class="`item item-${index + 1}`" @tap="handleSell(item)">
+            <view class="item-type">
+              <view class="icon">
+                <image
+                  style="width: 84rpx; height: 84rpx"
+                  :src="`/static/images/sell/${item.icon}.png`"
+                />
+              </view>
+              <view class="intro">
+                <text class="title">{{ item.title }}</text>
+                <view class="msg">
+                  <text v-if="item.subtitle" class="text">{{
+                    item.subtitle
+                  }}</text>
+                  <template v-if="item.intro">
+                    <text v-if="item.subtitle" class="split">|</text>
+                    <text class="text">{{ item.intro }}</text>
+                  </template>
+                </view>
+              </view>
+            </view>
+            <u--image
+              width="48rpx"
+              height="48rpx"
+              src="/static/images/common/icon_right.png"
+            />
+          </view>
+        </template>
+      </view>
+
+      <view class="sell-msg">
+        <u--image
+          width="28rpx"
+          height="28rpx"
+          src="/static/images/sell/icon_horn.png"
+        />
+        <text class="text">本平台禁止未成年人进行交易，账号交易需实名认证</text>
+      </view>
+
+      <popup-type ref="popupTypeRef" title="出售类型区别说明">
+        <template #bgView>
+          <view class="bg-view"></view>
+        </template>
+
+        <scroll-view
+          style="height: 700rpx"
+          scroll-y="true"
+          class="scroll-Y"
+          :show-scrollbar="false"
+        >
+          <view class="type-intro">
+            <view class="title-box">
+              <view class="line"></view>
+              <text class="intro-title">官方寄售</text>
+            </view>
+            <text class="intro-text"
+              >1、卖家发布商品，经官方审核合格即上架；</text
+            >
+            <text class="intro-text"
+              >2、商品上架后，列入列表展示，广泛对接买家；</text
+            >
+            <text class="intro-text"
+              >3、买家确认付款，系统自动建群，交易流程随即启动。</text
+            >
+          </view>
+          <view class="type-intro">
+            <view class="title-box">
+              <view class="line"></view>
+              <text class="intro-title">中介担保</text>
+            </view>
+            <text class="intro-text">1、双方协商价格，核对账号信息； </text>
+            <text class="intro-text">2、联系客服，即刻组建专属交易群； </text>
+            <text class="intro-text"
+              >3、一站式中介担保，覆盖所有游戏账号。</text
+            >
+          </view>
+
+          <view class="type-intro">
+            <view class="title-box">
+              <view class="line"></view>
+              <text class="intro-title">闪电回收</text>
+            </view>
+            <text class="intro-text">1、选游戏，询价回收商； </text>
+            <text class="intro-text">2、号商评估，给出报价； </text>
+            <text class="intro-text">3、卖家确认报价，录入商品详情；</text>
+            <text class="intro-text">4、号商验证账号，号商完成购买。</text>
+          </view>
+        </scroll-view>
+
+        <view class="intro-btn" @tap="handleCloseType">
+          <text class="btn-text">我知道了</text>
+        </view>
+      </popup-type>
+    </view>
+  </global-view>
+</template>
+<script setup lang="ts">
+// import { idCardVerify } from "@/api/user";
+import { reactive, ref } from "vue";
+import GlobalView from "@/components/global-view/index.vue";
+import PopupType from "@/components/my-popup/index.vue";
+import { useUserStore } from "@/stores/user";
+import { useMainStore } from "@/stores/main";
+import { ProductTypeEnum } from "@/enums/product";
+import Events, { report } from "@/utils/report/report";
+
+const userStore = useUserStore();
+const mainStore = useMainStore();
+const popupTypeRef = ref(null);
+const sellTypeList = reactive([
+  {
+    type: ProductTypeEnum.ACCOUNT,
+    title: "官方寄售",
+    subtitle: "官方挂售",
+    intro: "迅速匹配买家",
+    icon: "icon_consignment",
+  },
+  {
+    type: ProductTypeEnum.RECYCLE,
+    title: "闪电回收",
+    subtitle: "极速变现",
+    intro: "安全回收！",
+    icon: "icon_recovery",
+  },
+  {
+    type: ProductTypeEnum.GUARANTEE,
+    title: "中介担保",
+    subtitle: "平台保障",
+    intro: "买卖账号无风险",
+    icon: "icon_intermediary", // icon_recovery
+  },
+]);
+
+const handleCheckType = () => {
+  popupTypeRef.value.open();
+};
+const handleCloseType = () => {
+  popupTypeRef.value.close();
+};
+
+const handleSell = async (item) => {
+  if (item.type === ProductTypeEnum.ACCOUNT) {
+    report(Events.SELL_CONSIGN);
+  } else if (item.type === ProductTypeEnum.RECYCLE) {
+    report(Events.SELL_RECYCLE);
+  } else if (item.type === ProductTypeEnum.GUARANTEE) {
+    report(Events.SELL_GUARANTEE);
+  }
+  uni.navigateTo({
+    url: `/pages/sell-account/sell-game-enter/index?type=${item.type}&title=${item.title}`,
+  });
+  // if (userStore.userInfo.identifyNum) {
+  //   uni.navigateTo({
+  //     url: `/pages/sell-account/sell-game-enter/index?type=${item.type}&title=${item.title}`,
+  //   });
+  //   return;
+  // } else {
+  //   mainStore.toggleRealPopup(true);
+  // }
+};
+</script>
+<style scoped lang="scss">
+@import "./index.scss";
+</style>

@@ -1,0 +1,511 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="提现"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+        <template #right>
+          <text class="nav-text" @click="toBalanceList">余额记录</text>
+        </template>
+      </u-navbar>
+    </template>
+    <view class="content">
+      <view class="cell-group">
+        <view class="cell-item">
+          <bind-wx
+            v-if="isWx"
+            :is-bind="Boolean(accountBindData.wx.open_id)"
+            :avatar="accountBindData.wx.social_avatar"
+            :nickname="accountBindData.wx.social_nickname"
+            @submit="handleBindWx"
+          />
+          <bind-zfb
+            v-if="isZfb"
+            :is-bind="Boolean(accountBindData.zfb.open_id)"
+            :avatar="accountBindData.zfb.social_avatar"
+            :nickname="accountBindData.zfb.open_id"
+            @submit="handleBindZfb"
+          />
+        </view>
+        <view class="cell-item">
+          <view class="balance-box">
+            <view class="flex-row space-between">
+              <view class="flex-row space-between" @click="rulePopupRef.open()">
+                <text class="label">提现金额(元)</text>&nbsp;
+                <u--image
+                  src="/static/images/my/icon_question.png"
+                  width="40rpx"
+                  height="40rpx"
+                ></u--image>
+              </view>
+              <view
+                v-if="userStore.platformCurrency > 0"
+                class="btn-info"
+                @click="handleWithdrawAll"
+              >
+                <text class="txt">全部提现</text>
+              </view>
+            </view>
+
+            <view class="price">
+              <text class="unit">￥</text>
+              <input
+                class="input"
+                placeholder=""
+                type="digit"
+                :value="withdrawData.price"
+                :focus="false"
+                @input="handlePrice"
+                @blur="handleCheckPrice"
+              />
+            </view>
+            <view class="flex-row space-between">
+              <text
+                v-if="!validateRule.pass && validateRule.msg"
+                class="text red"
+              >
+                {{ validateRule.msg }}
+              </text>
+              <text v-else class="text">
+                账户余额: ￥{{ userStore.platformCurrency }}
+              </text>
+
+              <view class="btn-plain" @click="toWithdrawList">
+                <text class="txt">提现记录</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="btn-box">
+        <view
+          :class="{ 'btn-primary': true, disabled: !validateRule.pass }"
+          @click="handleSubmit"
+        >
+          <text class="txt">提现</text>
+        </view>
+      </view>
+    </view>
+
+    <real-popup ref="realPopupRef" title="实名认证">
+      <real-verification @success="handleCloseReal" />
+    </real-popup>
+
+    <create-order-popup ref="withdrawPopupRef" title="温馨提示">
+      <view class="popup-warpper">
+        <view class="popup-content center">
+          <text class="popup-text"
+            >根据国家规定，已成年的实名用户才能交易游戏虚拟物品。请先完成实名认证，再绑定收款账号。</text
+          >
+        </view>
+        <view class="popup-btn-box">
+          <view
+            class="popup-btn popup-btn-cancel"
+            @click="withdrawPopupRef.close()"
+          >
+            <text class="popup-text">取消</text>
+          </view>
+          <view class="popup-btn popup-btn-confirm" @click="handleShowReal">
+            <text class="popup-text">确认</text>
+          </view>
+        </view>
+      </view>
+    </create-order-popup>
+
+    <create-order-popup ref="rulePopupRef" title="温馨提示">
+      <view class="popup-warpper">
+        <view class="popup-content">
+          <view class="popup-items">
+            <text class="popup-text"
+              >1.提现申请发起后，审核一般在1-3个工作日完成，请耐心等待；
+            </text>
+          </view>
+          <view class="popup-items">
+            <text class="popup-text"
+              >2.对账户余额有疑问，可以在余额记录中查看明细；
+            </text>
+          </view>
+          <view class="popup-items">
+            <text class="popup-text"
+              >3.如果对使用结果和流程有疑问，欢迎在我的-专属客服发起；
+            </text>
+          </view>
+          <view class="popup-items">
+            <text class="popup-text"
+              >4.绑定微信账号才可以进行提现，只需绑定一次，后续均提现至已绑定微信账号；
+            </text>
+          </view>
+          <view class="popup-items">
+            <text class="popup-text">5.每个账号，每日仅可提现1次。 </text>
+          </view>
+        </view>
+      </view>
+    </create-order-popup>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { floor } from "lodash-es";
+import { ChannelType, TransChannel } from "@/enums/order";
+import GlobalView from "@/components/global-view/index.vue";
+// import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { createBalancePayouts } from "@/api/order";
+import { getUserPayAccountBindInfo } from "@/api/user";
+// import OrderItem from "./components/list.vue";
+import BindWx from "./components/bind-wx.vue";
+import BindZfb from "./components/bind-zfb.vue";
+import RealPopup from "@/components/my-popup/index.vue";
+import RealVerification from "@/components/real-verification/index.vue";
+import CreateOrderPopup from "@/components/my-popup/index.vue";
+import { Login } from "@/components/payment/login";
+import { useUserStore } from "@/stores/user";
+import Events, { report, ReportStatus } from "@/utils/report/report";
+// import { toLogin, checkIsLogin } from "@/utils/login";
+
+const { wxBind } = Login();
+const userStore = useUserStore();
+
+const realPopupRef = ref();
+const withdrawPopupRef = ref(null);
+const rulePopupRef = ref(null);
+
+const withdrawData = reactive({
+  price: undefined,
+  identity: "",
+  real_name: "",
+});
+const accountBindData = reactive({
+  wx: {
+    social_nickname: "",
+    social_avatar: "",
+    open_id: "",
+    app_id: "",
+  },
+  zfb: {
+    social_nickname: "",
+    social_avatar: "",
+    open_id: "",
+    app_id: "",
+  },
+});
+
+onLoad(() => {
+  userStore.getUserWalletInfo();
+  fetchUserPayAccountBindInfo();
+});
+
+const validateRule = computed(() => {
+  const rule = {
+    pass: false,
+    msg: "",
+  };
+  if (!withdrawData.price) {
+    rule.msg = "";
+  } else if (withdrawData.price < 1) {
+    rule.msg = "提现金额不得低于1元";
+  } else if (withdrawData.price > userStore.platformCurrency) {
+    rule.msg = `输入金额超过余额￥${userStore.platformCurrency}`;
+  } else if (decimalPlaces(withdrawData.price) > 2) {
+    rule.msg = `提现金额必须是大于1元且小数后最多2位`;
+  } else {
+    rule.msg = "";
+    rule.pass = true;
+  }
+  return rule;
+});
+
+const isWx = computed(() => {
+  // console.log("userStore.balanceInfo", userStore.balanceInfo);
+  return userStore.balanceInfo.find((el) => el.channel_type === ChannelType.WX);
+});
+
+const isZfb = computed(() => {
+  return userStore.balanceInfo.find(
+    (el) => el.channel_type === ChannelType.ZFB
+  );
+});
+
+const decimalPlaces = (num: number): number => {
+  const str = num.toString();
+
+  if (str.indexOf(".") !== -1) {
+    const parts = str.split(".");
+
+    return parts[1].length;
+  }
+  return 0;
+};
+
+const handlePrice = (e) => {
+  const { value } = e.detail;
+  withdrawData.price = value;
+};
+
+const handleBindWx = async () => {
+  // if (!checkIsLogin()) {
+  //   toLogin();
+  //   return;
+  // }
+  if (!userStore.userInfo.identifyNum) {
+    withdrawPopupRef.value.open();
+    return;
+  }
+
+  const data = await wxBind().catch((err) => {
+    uni.$main.toast(err?.errMsg || "绑定微信失败");
+  });
+  if (data?.status) {
+    // accountBindData.wx = data;
+    await uni.$u.sleep(500);
+    await fetchUserPayAccountBindInfo();
+  }
+};
+
+const handleBindZfb = async () => {
+  // if (!checkIsLogin()) {
+  //   toLogin();
+  //   return;
+  // }
+  if (!userStore.userInfo.identifyNum) {
+    withdrawPopupRef.value.open();
+    return;
+  }
+  uni.redirectTo({
+    url: "/pages/my/balance-payouts/zfb",
+  });
+};
+
+const handleCloseReal = () => {
+  realPopupRef.value?.close();
+};
+
+const handleShowReal = () => {
+  withdrawPopupRef.value?.close();
+  realPopupRef.value?.open();
+};
+
+const handleWithdrawAll = () => {
+  if (userStore.platformCurrency) {
+    withdrawData.price = userStore.platformCurrency;
+  }
+};
+
+const handleCheckPrice = () => {
+  if (withdrawData.price) {
+    withdrawData.price = floor(withdrawData.price, 2);
+  }
+};
+
+const handleSubmit = async () => {
+  report(Events.MY_BALANCE_WITHDRAW);
+
+  if (
+    (isWx.value && !accountBindData.wx.open_id) ||
+    (isZfb.value && !accountBindData.zfb.open_id)
+  ) {
+    uni.$main.toast("请先绑定提现账号");
+    return;
+  }
+
+  // if (isZfb.value && !accountBindData.zfb.open_id) {
+  //   uni.$main.toast("请先绑定支付宝账号");
+  //   return;
+  // }
+
+  const ruleData = validateRule.value;
+
+  if (!ruleData.pass) {
+    uni.$main.toast(ruleData.msg || "请输入要提现的金额");
+    return;
+  }
+
+  let opts = {
+    price: floor(withdrawData.price, 2),
+    identity: withdrawData.identity,
+    real_name: withdrawData.real_name,
+    channel_type: ChannelType.WX,
+    trans_channel: TransChannel.WX,
+  };
+
+  if (isZfb.value) {
+    opts = {
+      price: floor(withdrawData.price, 2),
+      identity: accountBindData.zfb.open_id,
+      real_name: "",
+      channel_type: ChannelType.ZFB,
+      trans_channel: TransChannel.ZFB,
+    };
+  }
+
+  const data = await createBalancePayouts(opts).catch((err) => {
+    report(Events.MY_BALANCE_WITHDRAW_STATUS, {
+      status: ReportStatus.FAILED,
+      errMsg: err,
+    });
+    uni.log.info("err", err);
+    uni.$main.toast(err?.msg || "发起失败");
+  });
+  report(Events.MY_BALANCE_WITHDRAW_STATUS, { status: ReportStatus.SUCCESS });
+  if (data) {
+    uni.$main.toast("发起成功");
+    withdrawData.price = "";
+    userStore.init();
+  }
+};
+
+const fetchUserPayAccountBindInfo = async () => {
+  const data = await getUserPayAccountBindInfo().catch((err) => {
+    uni.log.info("err", err);
+  });
+  if (data) {
+    const wxData = data.find((el) => el.type === 1);
+    const zfbData = data.find((el) => el.type === 2);
+    accountBindData.wx = wxData || {};
+    accountBindData.zfb = zfbData || {};
+  }
+};
+
+const toWithdrawList = () => {
+  uni.navigateTo({
+    url: `/pages/my/balance-payouts/list`,
+  });
+};
+const toBalanceList = () => {
+  uni.navigateTo({
+    url: `/pages/my/balance-payouts/balance-list`,
+  });
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/static/style/popup.scss";
+
+.nav-text {
+  font-size: 28rpx;
+  color: #606060;
+}
+
+.content {
+  .flex-row {
+    @include flex(row);
+
+    &.space-between {
+      justify-content: space-between;
+    }
+
+    &.center {
+      align-items: center;
+    }
+  }
+
+  .cell-group {
+    .cell-item {
+      margin-top: 16rpx;
+      padding: 24rpx;
+      background: #ffffff;
+    }
+
+    .account-box {
+      .text {
+        margin-left: 16rpx;
+        font-weight: 300;
+        font-size: 28rpx;
+        color: #afafaf;
+      }
+    }
+
+    .balance-box {
+      .text {
+        font-weight: 500;
+        font-size: 24rpx;
+        color: #1a1a1a;
+
+        &.red {
+          color: #f42a2a;
+        }
+      }
+
+      .price {
+        @include flex(row);
+        align-items: center;
+        margin: 32rpx 0;
+        border-bottom: 2rpx solid #afafaf;
+
+        .unit {
+          font-weight: 600;
+          font-size: 64rpx;
+          color: #1a1a1a;
+        }
+
+        .input {
+          width: 600rpx;
+          height: 120rpx;
+          font-size: 64rpx;
+          color: #1a1a1a;
+        }
+      }
+    }
+  }
+
+  .btn-box {
+    @include flex(row);
+    justify-content: center;
+    margin: 40rpx 0;
+  }
+
+  .btn-info {
+    @include flex(row);
+    align-items: center;
+    justify-content: center;
+    width: 96rpx;
+    height: 28rpx;
+
+    .txt {
+      font-size: 24rpx;
+      color: $app-main-color;
+    }
+  }
+
+  .btn-plain {
+    @include flex(row);
+    align-items: center;
+    justify-content: center;
+    width: 128rpx;
+    height: 44rpx;
+    border-radius: 4rpx 4rpx 4rpx 4rpx;
+    border: 2rpx solid #f5f5f5;
+
+    .txt {
+      font-size: 24rpx;
+      color: #606060;
+    }
+  }
+
+  .btn-primary {
+    @include flex(row);
+    align-items: center;
+    justify-content: center;
+    width: 702rpx;
+    height: 86rpx;
+    background: $app-main-color;
+    border-radius: 8rpx 8rpx 8rpx 8rpx;
+
+    &.disabled {
+      background: rgba(172, 219, 217, 1);
+    }
+
+    .txt {
+      font-weight: 500;
+      font-size: 28rpx;
+      color: #ffffff;
+    }
+  }
+}
+</style>

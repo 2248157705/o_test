@@ -1,0 +1,190 @@
+<template>
+  <global-view
+    :showBar="false"
+    :scroll="false"
+    :showBgImage="true"
+    bgColor="linear-gradient(to bottom, #ffffff, #F7F9FA)"
+  >
+    <view class="game-enter-content">
+      <template
+        v-if="
+          [ProductTypeEnum.VALUATION, ProductTypeEnum.RECYCLE].includes(
+            params.type - 0
+          )
+        "
+      >
+        <RecommendGameList
+          :type="params.type"
+          :title="params.title"
+          @handle-select="handleSelect"
+        >
+          <template #nav>
+            <u-navbar
+              bgColor="rgba(0,0,0,0)"
+              :title="params.title"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+              @right-click="handleRightClick"
+            >
+              <template v-if="params.type == ProductTypeEnum.VALUATION" #right>
+                <text class="right-text">估价记录</text>
+              </template>
+              <template v-if="params.type == ProductTypeEnum.RECYCLE" #right>
+                <text class="right-text">回收说明</text>
+              </template>
+            </u-navbar>
+          </template>
+        </RecommendGameList>
+      </template>
+      <template v-else>
+        <GoodsIndexList :title="params.title" @handle-select="handleSelect">
+          <template #nav>
+            <u-navbar
+              bgColor="rgba(0,0,0,0)"
+              :title="params.title"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+              @right-click="handleRightClick"
+            >
+            </u-navbar>
+          </template>
+        </GoodsIndexList>
+      </template>
+    </view>
+    <view>
+      <example-popup
+        ref="examplePopupRef"
+        title="回收说明"
+        :popupStyle="popupStyle"
+        :titleBoxStyle="titleBoxStyle"
+        @close="examplePopupRef.close()"
+      >
+        <scroll-view scroll-y :show-scrollbar="false" style="height: 1100rpx">
+          <image
+            mode="widthFix"
+            style="width: 100%"
+            src="/static/images/sell/icon_recycle_explain.png"
+          />
+        </scroll-view>
+      </example-popup>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { ProductTypeEnum } from "@/enums/product";
+import GlobalView from "@/components/global-view/index.vue";
+// import Search from "@/components/search/index.vue";
+import GoodsIndexList from "@/components/goods-index-list/index.vue";
+import RecommendGameList from "@/components/recommend-game-list/index.vue";
+import ExamplePopup from "@/components/popup/index.vue";
+import Events, { report } from "@/utils/report/report";
+import { toLogin, checkIsLogin } from "@/utils/login";
+
+const params = ref({});
+const examplePopupRef = ref(null);
+
+const popupStyle = ref({
+  backgroundColor: "#fff", // 修改背景色
+  borderTopLeftRadius: "24rpx", // 修改圆角
+  borderTopRightRadius: "24rpx", // 修改圆角
+  boxSizing: "border-box", // 修改内边距
+});
+const titleBoxStyle = ref({
+  background: "linear-gradient(to bottom, #ecfefd, #fff)", // 修改背景色
+  padding: "32rpx", // 修改内边距
+  borderTopLeftRadius: "24rpx", // 修改圆角
+  borderTopRightRadius: "24rpx", // 修改圆角
+  paddingBottom: "0", // 修改内边距
+});
+onLoad((data) => {
+  params.value = data;
+});
+
+const checkLogin = () => {
+  if (!checkIsLogin()) {
+    toLogin();
+    return false;
+  }
+
+  return true;
+};
+
+const handleSelect = (data) => {
+  console.log("handleSelect", data);
+  if (!checkLogin()) {
+    return false;
+  }
+  const { type, ticketId } = params.value;
+  // 担保交易
+  if (type == ProductTypeEnum.GUARANTEE && !ticketId) {
+    report(Events.SELL_GUARANTEE_SELECT_GAME, {
+      game_id: data.id,
+      game_name: data.game_name,
+    });
+    uni.navigateTo({
+      url: `/pages/guarantee/index`,
+    });
+    return;
+  }
+  // 回收
+  if (type == ProductTypeEnum.RECYCLE && !ticketId) {
+    report(Events.SELL_RECYCLE_SELECT_GAME, {
+      game_id: data.id,
+      game_name: data.game_name,
+    });
+    uni.navigateTo({
+      url: `/pages/lightning-recycle/list`,
+    });
+    return;
+  }
+
+  // 一键估价
+  if (type == ProductTypeEnum.VALUATION) {
+    report(Events.HOME_APPRAISE_GAME, {
+      game_id: data.id,
+      game_name: data.game_name,
+    });
+    uni.navigateTo({
+      url: `/pages/sell-account/sell-information-enter/index?type=${type}&ticketId=${ticketId}`,
+    });
+    return;
+  }
+
+  // 官方寄售
+  report(Events.SELL_CONSIGN_SELECT_GAME, {
+    game_id: data.id,
+    game_name: data.game_name,
+  });
+  uni.navigateTo({
+    url: `/pages/sell-account/sell-information-enter/index?type=${type}&ticketId=${ticketId}`,
+  });
+};
+
+const handleRightClick = () => {
+  const { type } = params.value;
+  if (type == ProductTypeEnum.VALUATION) {
+    uni.navigateTo({
+      url: "/pages/valuation/list",
+    });
+  }
+  if (type == ProductTypeEnum.RECYCLE) {
+    examplePopupRef.value.open();
+  }
+};
+</script>
+<style lang="scss" scoped>
+.game-enter-content {
+  /* padding: 0 24rpx; */
+  flex: 1;
+  .right-text {
+    font-weight: 500;
+    font-size: 28rpx;
+    color: #1a1a1a;
+  }
+}
+</style>

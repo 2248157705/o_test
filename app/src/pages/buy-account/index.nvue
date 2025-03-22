@@ -1,0 +1,39 @@
+<template>
+  <global-view
+    :showBar="false"
+    bgColor="linear-gradient(to bottom, #ffffff, #F7F9FA)"
+  >
+    <view class="content-goods">
+      <GoodsIndexList @handle-select="handleSelect">
+        <template #nav>
+          <u-status-bar />
+        </template>
+      </GoodsIndexList>
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import GlobalView from "@/components/global-view/index.vue";
+import GoodsIndexList from "@/components/goods-index-list/index.vue";
+import Events, { report } from "@/utils/report/report";
+
+const handleSelect = (item: any) => {
+  report(Events.BUY_SELECT_GAME, {
+    game_id: item.id,
+    game_name: item.game_name,
+  });
+  uni.navigateTo({
+    url: `/pages/goods/list?id=${item.id}`,
+  });
+};
+</script>
+<style lang="scss" scoped>
+.content-goods {
+  /* padding: 0 24rpx; */
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+  flex: 1;
+}
+</style>

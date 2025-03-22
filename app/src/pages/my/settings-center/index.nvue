@@ -1,0 +1,349 @@
+<template>
+  <GlobalView :showBar="false">
+    <view
+      class="settings-wrapper"
+      bgColor="linear-gradient(to bottom, #ffffff, #FAFAFA)"
+      :showBar="false"
+    >
+      <view>
+        <u-cell-group class="cell-group-wrapper" :border="false">
+          <u-cell title="我的头像" :border="false" @click="handleAvatar">
+            <template #value>
+              <view class="cell-value">
+                <view class="user-avatar">
+                  <u-avatar
+                    :src="currentAvatar"
+                    size="68rpx"
+                    mode="aspectFill"
+                  />
+                  <view v-if="myInfo?.review_avatar" class="avatar-bg"></view>
+                  <image
+                    v-if="myInfo?.review_avatar"
+                    class="review"
+                    src="/static/images/my/security-center/review.png"
+                  ></image>
+                </view>
+                <u-icon
+                  v-if="userInfo"
+                  name="arrow-right"
+                  color="#AFAFAF"
+                ></u-icon>
+              </view>
+            </template>
+          </u-cell>
+          <u-line color="#F4F5F6" />
+          <block v-if="userInfo">
+            <u-cell title="我的昵称" :border="false" @click="handleNickname">
+              <template #value>
+                <view class="cell-value">
+                  <text class="right-text">{{ currentNickName }}</text>
+                  <u-icon name="arrow-right" color="#AFAFAF"></u-icon>
+                </view>
+              </template>
+            </u-cell>
+            <u-line color="#F4F5F6" />
+          </block>
+          <block v-if="userInfo">
+            <u-cell title="ID" :border="false">
+              <template #value
+                ><text class="right-text">
+                  {{ userInfo?.account }}
+                </text></template
+              >
+            </u-cell>
+            <u-line color="#F4F5F6" />
+          </block>
+          <u-cell
+            v-if="userInfo"
+            title="账号与安全"
+            :border="false"
+            @click="navigatorToAccountSecurity"
+          >
+            <template #value>
+              <u-icon name="arrow-right" color="#AFAFAF"></u-icon>
+            </template>
+          </u-cell>
+          <u-line color="#F4F5F6" />
+
+          <block v-if="userInfo">
+            <u-cell
+              title="提现账号管理"
+              :border="false"
+              @click="handleReminderAccount"
+            >
+              <template #value>
+                <u-icon name="arrow-right" color="#AFAFAF"></u-icon>
+              </template>
+            </u-cell>
+          </block>
+        </u-cell-group>
+
+        <u-cell-group class="cell-group-wrapper" :border="false">
+          <block v-if="userInfo">
+            <u-cell
+              title="注销账号"
+              :border="false"
+              @click="handleCancelAccount"
+            >
+              <template #value>
+                <u-icon name="arrow-right" color="#AFAFAF"></u-icon>
+              </template>
+            </u-cell>
+          </block>
+        </u-cell-group>
+
+        <u-gap bgColor="#F7F9FA" height="6" />
+        <u-cell-group class="cell-group-wrapper" :border="false">
+          <u-cell title="通知设置" :border="false" @click="navigatorToNotic">
+            <template #value>
+              <u-icon name="arrow-right" color="#AFAFAF"></u-icon>
+            </template>
+          </u-cell>
+          <u-line color="#F4F5F6" />
+
+          <u-cell title="聊天悬浮窗" :border="false">
+            <template #label>
+              <view class="describe">
+                <text class="text"
+                  >关闭后将无法在其它页面快速进入客服聊天对话框</text
+                >
+              </view>
+            </template>
+            <template #value>
+              <u-switch
+                v-model="isFloatChat"
+                space="2"
+                activeColor="#34C792"
+                inactiveColor="rgb(230, 230, 230)"
+                @change="handleFloatChat"
+              >
+              </u-switch>
+            </template>
+          </u-cell>
+          <u-line color="#F4F5F6" />
+
+          <u-cell title="隐私设置" :border="false" @click="navigatorToPrivacy">
+            <template #value>
+              <u-icon name="arrow-right" color="#AFAFAF"></u-icon>
+            </template>
+          </u-cell>
+          <u-line color="#F4F5F6" />
+          <u-cell title="版本信息" :border="false">
+            <template #value>
+              <text class="right-text">{{ version }} </text>
+            </template>
+          </u-cell>
+        </u-cell-group>
+
+        <development-config v-if="isDev" />
+        <!-- <development-config /> -->
+      </view>
+      <view v-if="userInfo">
+        <!-- <u-gap bgColor="#F7F9FA" height="6" /> -->
+        <view class="login-out-btn" @click="handleLoginOut">
+          <text class="text">退出登录</text>
+        </view>
+      </view>
+
+      <!-- 修改昵称 -->
+      <NickNamePopup ref="nickNamePopupRef" @success="handleNickNameSuccess">
+      </NickNamePopup>
+    </view>
+  </GlobalView>
+</template>
+
+<script setup lang="ts">
+import { computed, ref } from "vue";
+import GlobalView from "@/components/global-view/index.vue";
+import storage from "@/utils/storage";
+import { useUserStore } from "@/stores/user";
+import { useMainStore } from "@/stores/main";
+import { systemInfo } from "@/utils/index";
+import { onShow } from "@dcloudio/uni-app";
+import { isDev } from "@/utils/config";
+import NickNamePopup from "./components/nick-name.vue";
+import DevelopmentConfig from "./components/development-config.vue";
+import { toLogin, getHomePageUrl } from "@/utils/login";
+import { getMyInfo } from "@/api/user";
+
+const userStore = useUserStore();
+const mainStore = useMainStore();
+const userInfo = ref(userStore.userInfo);
+const myInfo = ref(null);
+onShow(() => {
+  userInfo.value = userStore.userInfo;
+  if (userInfo.value) {
+    updateMyInfo();
+  }
+});
+
+const updateMyInfo = () => {
+  getMyInfo().then((res) => {
+    myInfo.value = res;
+    userStore.setUserInfo({ ...userStore.userInfo, ...res });
+    mainStore.hideLoading();
+  });
+};
+const currentNickName = computed(() => {
+  if (myInfo.value?.nickname) {
+    return myInfo.value?.nickname;
+  } else {
+    return userInfo.value?.nickname || "";
+  }
+});
+
+const currentAvatar = computed(() => {
+  if (myInfo.value?.avatar) {
+    return myInfo.value?.avatar;
+  } else {
+    return userInfo.value?.avatar || "/static/images/my/icon_avatar.png";
+  }
+});
+
+const version = `v${systemInfo.appWgtVersion}`;
+
+// 注销账号
+const handleCancelAccount = () => {
+  uni.navigateTo({
+    url: "/pages/my/settings-center/cancel-account",
+  });
+};
+
+const navigatorToPrivacy = () => {
+  uni.navigateTo({
+    url: "/pages/my/settings-center/privacy-settings",
+  });
+};
+
+const handleLoginOut = () => {
+  storage.clear();
+  userStore.logOut();
+  uni.$main.toast("退出登录成功");
+  const url = getHomePageUrl();
+  toLogin(url);
+};
+
+const nickNamePopupRef = ref(null);
+const handleAvatar = () => {
+  if (userInfo.value) {
+    if (myInfo.value?.review_avatar) {
+      uni.$main.toast("头像审核中，暂无法修改");
+      return;
+    }
+    uni.navigateTo({
+      url: "/pages/my/settings-center/avatar",
+    });
+  }
+};
+const handleNickname = () => {
+  if (userInfo.value) {
+    if (myInfo.value?.review_nickname) {
+      uni.$main.toast("昵称审核中，暂无法修改");
+      return;
+    }
+    nickNamePopupRef.value?.open();
+  }
+};
+const handleNickNameSuccess = (val) => {
+  userInfo.value.nickname = val;
+  updateMyInfo();
+};
+const handleReminderAccount = () => {
+  if (userInfo.value) {
+    uni.navigateTo({
+      url: "/pages/my/settings-center/reminder-account",
+    });
+  }
+};
+
+const navigatorToNotic = () => {
+  uni.navigateTo({
+    url: "/pages/my/settings-center/notic-settings",
+  });
+};
+
+const navigatorToAccountSecurity = () => {
+  uni.navigateTo({
+    url: "/pages/my/settings-center/account-security",
+  });
+};
+
+const isFloatChat = ref(userStore.isFloatChat);
+const handleFloatChat = (val) => {
+  userStore.setFloatChat(val);
+};
+</script>
+
+<style lang="scss" scoped>
+.settings-wrapper {
+  background-color: #ffffff;
+  .user-avatar {
+    position: relative;
+    width: 68rpx;
+    height: 68rpx;
+  }
+
+  .avatar-bg {
+    width: 68rpx;
+    height: 68rpx;
+    position: absolute;
+    z-index: 1;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    top: 0rpx;
+    right: 0rpx;
+  }
+  .review {
+    width: 50rpx;
+    height: 20rpx;
+    position: absolute;
+    right: 10rpx;
+    top: 48rpx;
+    z-index: 2;
+  }
+
+  .cell-group-wrapper {
+    padding: 0 20rpx 0rpx 20rpx;
+  }
+  .text {
+    color: #606060;
+    font-size: 26rpx;
+  }
+  .real-name {
+    @include flex;
+    align-items: center;
+    justify-content: center;
+    .no-text {
+      color: #afafaf !important;
+    }
+  }
+  .cell-value {
+    @include flex;
+    align-items: center;
+    justify-content: center;
+    .no-text {
+      color: #606060 !important;
+    }
+  }
+}
+.right-text {
+  font-size: 28rpx;
+  color: #606060;
+}
+.login-out-btn {
+  // margin-top: 50rpx;
+  margin: 30rpx 20rpx;
+  margin-bottom: 0;
+  height: 96rpx;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #f4f5f6;
+  .text {
+    font-weight: 500;
+    font-size: 28rpx;
+    color: #1a1a1a;
+  }
+}
+</style>

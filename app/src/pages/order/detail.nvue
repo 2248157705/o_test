@@ -1,0 +1,585 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="订单详情"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view v-if="detailData.detail.order_id" class="container">
+      <view
+        v-if="orderStatusData.action === orderActionMap.PAID"
+        class="count-down"
+      >
+        <text class="text">付款时间&nbsp;</text>
+        <u-count-down
+          :time="countDownTime"
+          format="mm分钟ss秒"
+          @finish="handleFinishCountDown"
+        ></u-count-down>
+        <text class="text">&nbsp;超时未付款将自动关闭</text>
+      </view>
+
+      <view class="goods-item" style="padding-top: 0; background-color: #fff">
+        <view
+          style="padding: 12rpx"
+          @click="toGoodsDetail(detailData.detail.product)"
+        >
+          <goods-buy-view
+            type="personal-list"
+            :product="detailData.detail.product"
+            :bargain="bargain"
+            :row="true"
+            :flexShrink="true"
+          >
+            <template #price>
+              <u--text
+                style="margin-top: -10rpx"
+                bold
+                color="#1A1A1A"
+                size="32rpx"
+                mode="price"
+                align="left"
+                :text="+detailData.detail.actual_amount"
+              />
+            </template>
+          </goods-buy-view>
+        </view>
+        <view class="pay-status-box">
+          <u-gap height="1" bgColor="#f4f5f6" marginBottom="22rpx"></u-gap>
+          <view
+            v-for="item in usedPayItems"
+            :key="item.payMethod"
+            class="pay-status"
+          >
+            <template v-if="item.payMethod === PaymentType.TCOIN">
+              <text class="text">{{
+                item.payStatus === PayStatus.ING
+                  ? "帐户余额待付款："
+                  : "帐户余额已付款："
+              }}</text>
+            </template>
+            <template v-else>
+              <text class="text">{{
+                item.payStatus === PayStatus.ING ? "待付款：" : "已付款："
+              }}</text>
+            </template>
+            <view class="price">
+              <text class="mark">￥</text>
+              <text class="amount">{{ priceFormat(item.amount, 2) }} </text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view v-if="statusInfo.length > 0 && false" class="goods-item">
+        <descriptions-item :items="statusInfo" />
+      </view>
+
+      <view
+        v-if="orderStatusData.action === orderActionMap.PAID"
+        class="goods-item"
+      >
+        <descriptions-item title="支付方式">
+          <used-pay-list :items="usedPayItems" />
+        </descriptions-item>
+      </view>
+
+      <!-- 申请售后 -->
+      <view v-if="afterSale.length > 0" class="goods-item">
+        <descriptions-item title="售后详情" :items="afterSale" />
+      </view>
+
+      <!-- 申请理赔 -->
+      <view v-if="claimsInfo.length > 0" class="goods-item">
+        <descriptions-item title="理赔详情" :items="claimsInfo" />
+      </view>
+
+      <view v-if="refundInfo.length > 0" class="goods-item">
+        <descriptions-item title="退款详情" :items="refundInfo" />
+      </view>
+
+      <view v-if="goodsInfo.length > 0" class="goods-item">
+        <descriptions-item title="商品信息" :items="goodsInfo" />
+      </view>
+
+      <view v-if="orderInfo.length > 0" class="goods-item">
+        <descriptions-item title="订单信息" :items="orderInfo">
+          <!-- <template #pay>
+            <pay-list />
+          </template> -->
+        </descriptions-item>
+      </view>
+      <view v-if="insuranceInfo.length > 0" class="goods-item">
+        <descriptions-item title="包赔信息" :items="insuranceInfo" />
+      </view>
+
+      <view
+        v-if="
+          orderStatusData.action &&
+          orderStatusData.action !== orderActionMap.CLOSED
+        "
+        class="btn-box"
+      >
+        <order-btn-item
+          ref="payRef"
+          size="large"
+          :show-popup="false"
+          :order="detailData.detail"
+          @refresh="onRefresh"
+        />
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { computed, ref } from "vue";
+import { onLoad, onShow, onUnload, onHide } from "@dcloudio/uni-app";
+import { orderBy } from "lodash-es";
+import { queryByProductId } from "@/api/order";
+import { BargainStatus } from "@/enums/order";
+import GlobalView from "@/components/global-view/index.vue";
+import DescriptionsItem from "./components/descriptions-item.vue";
+import GoodsBuyView from "@/components/goods-item-preview/index.vue";
+import OrderBtnItem from "@/pages/order/components/order-btn-item.vue";
+import UsedPayList from "./components/used-pay-list.vue";
+import { payMethodDataMap } from "@/pages/order/js/purchase";
+import { PayStatus, PaymentType } from "@/enums/order"; // OrderStatus
+import { priceFormat } from "@/utils/index";
+
+import {
+  GoodsOrder,
+  getCountDownTime,
+  getOrderStatusData,
+  orderActionMap,
+  orderStatusMap,
+  afterSaleApplyReasonOptions,
+  afterClaimsApplyReasonOptions,
+} from "@/pages/order/js/order";
+
+const { detailData, fetchOrderDetail } = GoodsOrder({
+  refresh: () => {
+    fetchOrderDetail();
+  },
+});
+const payRef = ref();
+const bargain = ref({});
+
+const orderStatusData = computed(() => {
+  const { order_status, order_type, order_insurance } = detailData.detail;
+  return getOrderStatusData(order_status, order_type, {
+    insurance_id: order_insurance?.insurance_order_id,
+  });
+});
+
+// const isUnPaid = computed(() => {
+//   return (
+//     orderStatusData.value.action === orderActionMap.PAID ||
+//     !orderStatusData.value.action
+//   );
+// });
+
+const countDownTime = computed(() => {
+  return getCountDownTime(detailData.detail.unpay_close_time);
+});
+
+const usedPayItems = computed(() => {
+  const { pay_info_value } = detailData.detail;
+  if (pay_info_value && pay_info_value.pay_info_list.length > 0) {
+    let arr = pay_info_value.pay_info_list.map((el) => {
+      return {
+        code: el.pay_channel,
+        name: el.name,
+        payMethod: el.pay_method,
+        img: payMethodDataMap[el.pay_method].img,
+        payStatus: el.pay_status,
+        amount: el.amount,
+      };
+    });
+    arr = orderBy(arr, ["payStatus"], ["desc"]);
+    return arr;
+  }
+  return [];
+});
+
+const statusInfo = computed(() => {
+  const { order_id, actual_amount } = detailData.detail;
+  if (order_id) {
+    return [
+      {
+        label: "实付金额",
+        value: actual_amount,
+        type: "price",
+      },
+      {
+        label: "订单状态",
+        value: orderStatusData.value.msg,
+        style: {
+          color: "#FF4B4B",
+        },
+        // value: orderStatusMap[order_status],
+      },
+    ];
+  }
+  return [];
+});
+
+const goodsInfo = computed(() => {
+  const { order_id, product } = detailData.detail;
+  if (order_id) {
+    return [
+      {
+        label: "游戏名称",
+        value: product.game_name,
+      },
+      {
+        label: "商品编号",
+        value: product.product_id,
+        type: "copy",
+      },
+    ];
+  }
+  return [];
+});
+
+const orderInfo = computed(() => {
+  const {
+    order_id,
+    create_time,
+    // total_amount,
+    product,
+    // pay_method,
+    // pay_info_value,
+  } = detailData.detail;
+  if (order_id) {
+    return [
+      {
+        label: "订单编号",
+        value: order_id,
+        type: "copy",
+      },
+      {
+        label: "创建时间",
+        value: create_time,
+      },
+      // {
+      //   label: "支付方式",
+      //   value: payMethodMap[pay_method] || "待付款",
+      //   // type:
+      //   //   orderStatusData.value.action === orderActionMap.PAID &&
+      //   //   userStore.payInfo.length >= 2
+      //   //     ? "pay"
+      //   //     : "",
+      // },
+      // {
+      //   label: "订单金额",
+      //   value: total_amount,
+      //   type: "price",
+      // },
+      // {
+      //   label: "余额支付",
+      //   value: product.game_name,
+      // },
+      {
+        label: "游戏名称",
+        value: product.game_name,
+      },
+      {
+        label: "商品编号",
+        value: product.product_id,
+      },
+    ];
+  }
+  return [];
+});
+
+const insuranceInfo = computed(() => {
+  const { order_id, order_insurance } = detailData.detail;
+  if (order_id && order_insurance) {
+    return [
+      {
+        label: order_insurance?.insurance_snapshot?.insurance_name,
+        value: order_insurance?.pay_amount,
+        type: "price",
+      },
+    ];
+  }
+  return [];
+});
+
+const afterSale = computed(() => {
+  const { order_id, refund_info_dto, order_status } = detailData.detail;
+  if (
+    order_id &&
+    refund_info_dto &&
+    refund_info_dto.refund_type == "AFTER_SALE"
+  ) {
+    const data = [
+      {
+        label: "原因",
+        value: afterSaleApplyReasonOptions.find(
+          (item) => item.value == refund_info_dto.reason_type
+        )?.name,
+      },
+      {
+        label: "售后申请时间",
+        value: refund_info_dto.create_time,
+      },
+      {
+        label: "详情描述",
+        value: refund_info_dto.reason_desc,
+      },
+      {
+        label: "审核状态",
+        value: orderStatusMap[order_status],
+        style: {
+          color: "#FF4B4B",
+        },
+      },
+    ];
+    if (order_status == "AFTER_SALE_REJECTED") {
+      data.push({
+        label: "拒绝原因",
+        value: refund_info_dto.reject_reason_desc,
+      });
+    }
+    return data;
+  }
+  return [];
+});
+
+const refundInfo = computed(() => {
+  const { order_id, refund_info_dto, order_status } = detailData.detail;
+
+  if (order_id && refund_info_dto && refund_info_dto.refund_type == "REFUND") {
+    const data = [
+      {
+        label: "退款原因",
+        value: refund_info_dto.reason_desc,
+      },
+      {
+        label: "申请时间",
+        value: refund_info_dto.create_time,
+      },
+      {
+        label: "申请退款金额",
+        value: priceFormat(refund_info_dto.refund_amount, 2),
+      },
+      {
+        label: "审核状态",
+        value: orderStatusMap[order_status],
+        style: {
+          color: "#FF4B4B",
+        },
+      },
+    ];
+    if (order_status == "REFUND_REJECTED") {
+      data.push({
+        label: "拒绝原因",
+        value: refund_info_dto.reject_reason_desc,
+      });
+    }
+    return data;
+  }
+  return [];
+});
+
+const claimsInfo = computed(() => {
+  const { order_id, refund_info_dto, order_status } = detailData.detail;
+
+  if (order_id && refund_info_dto && refund_info_dto.refund_type == "CLAIMS") {
+    const data = [
+      {
+        label: "申请原因",
+        value: afterClaimsApplyReasonOptions.find(
+          (item) => item.value == refund_info_dto.reason_type
+        )?.name,
+      },
+      {
+        label: "申请时间",
+        value: refund_info_dto.create_time,
+      },
+      {
+        label: "详情描述",
+        value: refund_info_dto.reason_desc,
+      },
+      {
+        label: "审核状态",
+        value: orderStatusMap[order_status],
+        style: {
+          color: "#FF4B4B",
+        },
+      },
+    ];
+    if (refund_info_dto.reject_reason_desc) {
+      data.push({
+        label: "拒绝原因",
+        value: refund_info_dto.reject_reason_desc,
+      });
+    }
+    return data;
+  }
+  return [];
+});
+
+onLoad((options) => {
+  if (options.orderId) {
+    init(options.orderId);
+  }
+});
+
+onShow(() => {
+  payRef.value?.checkH5PayStatus();
+});
+
+onUnload(() => {
+  payRef.value?.clearCheckPayStatus();
+});
+
+onHide(() => {
+  //
+});
+
+const handleOrderBargainDetail = async (product_id: string) => {
+  const data = await queryByProductId(product_id).catch((err) => {
+    console.log(err);
+  });
+  const status = data?.bid_history?.now_record.status;
+  if (
+    [
+      BargainStatus.FINISH,
+      BargainStatus.BUY_AGREE,
+      BargainStatus.SELLER_AGREE,
+    ].includes(status)
+  ) {
+    bargain.value = data?.bid_history?.now_record || {};
+  }
+};
+
+const init = async (orderId: string) => {
+  await fetchOrderDetail(orderId);
+  // 议价详情
+  if (detailData?.detail?.product_id) {
+    handleOrderBargainDetail(detailData.detail.product_id);
+  }
+};
+
+const onRefresh = async () => {
+  await fetchOrderDetail(detailData.orderId);
+};
+
+const toGoodsDetail = (product) => {
+  const { product_id } = product;
+  if (product_id) {
+    const params = uni.$u.queryParams({
+      product_id,
+    });
+    uni.navigateTo({ url: "/pages/goods/detail" + params });
+  }
+};
+
+const handleFinishCountDown = () => {
+  // onRefresh();
+};
+</script>
+<style lang="scss" scoped>
+.container {
+  padding: 20rpx;
+  background: #f7f9fa;
+  margin-bottom: 144rpx;
+  padding-bottom: 160rpx;
+
+  .goods-item {
+    margin-bottom: 20rpx;
+    // margin: 20rpx 0;
+    background: #ffffff;
+    border-radius: 8rpx;
+    overflow: hidden;
+  }
+
+  .count-down {
+    margin-bottom: 24rpx;
+    padding-top: 20rpx;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    .text {
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #1a1a1a;
+    }
+  }
+
+  .pay-status-box {
+    padding: 0rpx 24rpx;
+    padding-bottom: 22rpx;
+
+    .pay-status-main {
+      // @include flex(column);
+      // justify-content: flex-end;
+      // width: 654rpx;
+      border-top: 2rpx solid #f4f5f6;
+    }
+
+    .pay-status {
+      @include flex(row);
+      flex: 1;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      // padding: 22rpx 0;
+      // width: 654rpx;
+
+      .text {
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #1a1a1a;
+      }
+      .price {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        .mark {
+          font-weight: 600;
+          font-size: 24rpx;
+          color: #1a1a1a;
+          margin-right: 2rpx;
+          position: relative;
+          bottom: 6rpx;
+        }
+      }
+      .amount {
+        font-weight: 600;
+        font-size: 40rpx;
+        color: #1a1a1a;
+      }
+    }
+  }
+  .btn-box {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    padding: 24rpx;
+    width: 750rpx;
+    height: 144rpx;
+    background: #ffffff;
+    border-top: 2rpx solid #efefef;
+  }
+}
+::v-deep .goods-item .count-down .u-count-down__text {
+  color: $app-main-color;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+::v-deep .popup-content .u-textarea {
+  background-color: transparent !important;
+}
+
+::v-deep .popup-content .u-textarea__count {
+  background-color: transparent !important;
+}
+</style>

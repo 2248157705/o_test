@@ -1,0 +1,50 @@
+@import "@/static/style/customicons.scss";
+
+// 定义混入指令，用于在非nvue环境下的flex定义，因为nvue没有display属性，会报错
+@mixin vue-flex($direction: row) {
+	/* #ifndef APP-NVUE */
+	display: flex;
+	/* #endif */
+	flex-direction: $direction;
+}
+
+.fy_dropdown {flex:1;position: relative;}
+.fy_flex{@include vue-flex(row);align-items: center;}
+.fy_dropdown__menu{@include vue-flex(row);position: relative;align-items: center;justify-content: space-between;}
+.fy_dropdown__menu_mian{@include vue-flex(row);align-items: center;justify-content: space-between;flex: 1;}
+.fy_dropdown__menu__center{@include vue-flex(row); flex: 1;}
+.fy_dropdown__menu__item {@include vue-flex(row);justify-content: center;align-items: center;}
+.fy_dropdown__menu__item__text{font-size: 32rpx; font-weight: 400; color:	$app-main-color;}
+.fy_dropdown__menu__item__arrow{@include vue-flex(row);margin-left: 5rpx;margin-top: 3rpx;transition-property: transform;transition-duration: 0.3s; align-items: center;}
+.fy_dropdown__arrow__icon{
+	width: 36rpx;
+	height: 36rpx;
+}
+.fy_dropdown__sort__icons{@include vue-flex(column); margin-left: 10rpx;
+	position: relative;
+	top: 6rpx;
+	.arrow-down{
+		position: relative;
+		top: -10rpx;
+	}
+
+}
+
+.fy_dropdown__filter__icons{
+	width: 30rpx;
+	height: 30rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 5rpx;
+}
+.filter-icon{
+	width: 30rpx;
+	height: 30rpx;
+}
+.space-between {
+	justify-content: space-between;
+}
+.onMargin{
+	margin: 0;
+}

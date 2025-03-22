@@ -1,0 +1,446 @@
+<template>
+  <global-view ref="globalRef" :scroll="false">
+    <template #bgImage>
+      <scroll-view scroll-y :show-scrollbar="false" @scroll="handleScroll">
+        <view
+          class="leader-content"
+          :class="{
+            flex: !listData.length,
+          }"
+        >
+          <image
+            class="leader-bg leader-bg-header"
+            src="/static/images/leader/bg.png"
+          />
+          <view class="leader-num-view">
+            <view class="cube"></view>
+            <view class="line"></view>
+            <view class="leader-num">
+              <text class="text">昨日累计成交量</text>
+              <text
+                class="num"
+                :class="{
+                  end: !mainStore.yesterdaySum,
+                }"
+                >{{ mainStore.yesterdaySum || "暂无数据" }}</text
+              >
+            </view>
+            <view class="line"></view>
+            <view class="cube end"></view>
+          </view>
+          <view class="header">
+            <template v-if="topList.length">
+              <image class="crown" src="/static/images/leader/icon_crown.png" />
+              <template v-for="(item, index) in topList" :key="index">
+                <view :class="`header-item-view header-item-view-${index}`">
+                  <image class="icon" :src="item.icon" />
+
+                  <view class="name">
+                    <u--text
+                      :lines="1"
+                      lineHeight="14"
+                      size="14"
+                      color="#1a1a1a"
+                      :bold="true"
+                      :text="item.game_name"
+                    ></u--text>
+                  </view>
+                  <text class="total">{{ item.order_num }}</text>
+                </view>
+              </template>
+            </template>
+            <template v-else>
+              <view class="header-item-view header-item-view-0">
+                <image
+                  class="default"
+                  :src="`/static/images/leader/icon_default.png`"
+                />
+                <text class="name"></text>
+              </view>
+              <view class="header-item-view header-item-view-1">
+                <image
+                  class="default"
+                  :src="`/static/images/leader/icon_default.png`"
+                />
+                <text class="name"></text>
+              </view>
+              <view class="header-item-view header-item-view-2">
+                <image
+                  class="default"
+                  :src="`/static/images/leader/icon_default.png`"
+                />
+                <text class="name"></text>
+              </view>
+            </template>
+          </view>
+          <view class="leader-list">
+            <view class="leader-list-title">
+              <image class="icon" src="/static/images/leader/icon_data.png" />
+
+              <text class="text">数据来源于淘个号官方数据，每日0点更新</text>
+              <image class="icon" src="/static/images/leader/icon_data.png" />
+            </view>
+            <view v-if="listData.length" class="leader-list-cell">
+              <template v-for="(item, index) in listData" :key="index">
+                <view class="leader-item">
+                  <view class="leader-item-view">
+                    <view class="text-view">
+                      <text class="text">{{ index + 4 }}.</text>
+                    </view>
+                    <view class="icon-box">
+                      <image class="icon" :src="item.icon" />
+                    </view>
+                    <text class="name">{{ item.game_name }}</text>
+                  </view>
+                  <view class="leader-item-msg">
+                    <text class="total">{{ item.order_num }}</text>
+                  </view>
+                </view>
+              </template>
+              <text v-if="listData.length >= 27" class="end-text">
+                仅展示前30游戏成交量
+              </text>
+              <text v-else class="end-text">暂无更多数据</text>
+            </view>
+            <view v-else class="leader-default">
+              <my-empty
+                image="/static/images/empty/icon_default.png"
+                tip="火热进行中，0点展示榜单排名"
+              />
+            </view>
+          </view>
+        </view>
+        <view
+          ref="btnRef"
+          class="leader-btn"
+          :style="{
+            paddingBottom: safeAreaPadding(),
+          }"
+        >
+          <view class="view-btn" @click="handleAccount">
+            <view class="btn">
+              <text class="text">我要买号</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </template>
+    <template #bar>
+      <u-navbar
+        title="累计成交排行榜"
+        :leftIconColor="top >= 50 ? '#000' : '#fff'"
+        :titleStyle="`color:${top >= 50 ? '#000' : '#fff'}`"
+        :bgColor="bgColor"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, nextTick, computed, watch } from "vue";
+import { safeAreaPadding } from "@/utils";
+import GlobalView from "@/components/global-view/index.vue";
+import MyEmpty from "@/components/my-empty/my-empty.vue";
+import { useMainStore } from "@/stores/main";
+import Events, { report } from "@/utils/report/report";
+
+const globalRef = ref(null);
+const top = ref(0);
+const mainStore = useMainStore();
+const leaderList = ref([
+  {
+    game_name: "王者荣耀",
+    icon: "/static/images/home/hot_game_1.png",
+    order_num: "1360",
+    sort: "1",
+  },
+]);
+for (var i = 0; i < 30; i++) {
+  leaderList.value.push(leaderList.value[0]);
+}
+
+const topList = ref(mainStore.ranking.slice(0, 3));
+const listData = ref(mainStore.ranking.slice(3));
+
+const bgColor = computed(() => {
+  if (top.value >= 50) return "#fff";
+  return "rgba(0,0,0,0)";
+});
+
+const handleScroll = (e) => {
+  top.value = e.detail.scrollTop;
+};
+
+const handleAccount = () => {
+  report(Events.HOME_RANKING_BUY);
+  uni.switchTab({
+    url: "/pages/buy-account/index",
+  });
+};
+</script>
+
+<style lang="scss" scoped>
+.leader-content {
+  position: relative;
+  &.flex {
+    /* flex: 1; */
+  }
+  .leader-default {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    opacity: 0.6;
+  }
+}
+.leader-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  flex: 1;
+  height: 1030rpx;
+  z-index: 9;
+}
+
+.header {
+  height: 824rpx;
+  position: relative;
+  .crown {
+    position: absolute;
+    width: 96rpx;
+    height: 68rpx;
+    top: 330rpx;
+    left: 326rpx;
+    z-index: 99;
+  }
+  .header-item-view {
+    position: relative;
+    @include flex(column);
+    align-items: center;
+
+    .default {
+      width: 120rpx;
+      height: 120rpx;
+      border-radius: 28rpx;
+    }
+    .name {
+      margin-top: 48rpx;
+      margin-bottom: 8rpx;
+      width: 135rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .icon {
+      width: 116rpx;
+      height: 116rpx;
+      border-radius: 28rpx;
+      border: 4rpx solid #ffffff;
+    }
+
+    .total {
+      font-family: Barlow-Bold;
+      font-weight: 500;
+      font-size: 32rpx;
+      color: #1a1a1a;
+    }
+    &-0 {
+      position: absolute;
+      left: 306rpx;
+      top: 398rpx;
+    }
+    &-1 {
+      position: absolute;
+      left: 92rpx;
+      top: 468rpx;
+    }
+    &-2 {
+      position: absolute;
+      right: 100rpx;
+      top: 505rpx;
+    }
+  }
+}
+.leader-num-view {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 200rpx;
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  .cube {
+    width: 40rpx;
+    height: 56rpx;
+    background-color: #ff8857;
+    border-top-right-radius: 8rpx;
+    border-bottom-right-radius: 8rpx;
+    &.end {
+      border-top-left-radius: 8rpx;
+      border-bottom-left-radius: 8rpx;
+    }
+  }
+  .line {
+    background-color: #ff8857;
+    height: 5rpx;
+    flex: 1;
+  }
+  .leader-num {
+    width: 348rpx;
+    height: 78rpx;
+    background: linear-gradient(to bottom, #ffcb9a, #ffe7d9);
+    box-shadow: 0rpx 4rpx 8rpx 0rpx rgba(249, 118, 83, 0.28);
+    border-radius: 12rpx;
+    @include flex(row);
+    align-items: center;
+    justify-content: center;
+    .text {
+      font-weight: 600;
+      font-size: 28rpx;
+      color: #630904;
+      margin-right: 16rpx;
+    }
+    .num {
+      font-family: Barlow-Bold;
+      font-weight: bold;
+      font-size: 48rpx;
+      color: #e01c1c;
+      margin-top: -5rpx;
+      &.end {
+        font-size: 30rpx;
+      }
+    }
+  }
+}
+.leader-list {
+  background: linear-gradient(to bottom, #fdf1ed, #ffffff);
+  border-top-left-radius: 24rpx;
+  border-top-right-radius: 24rpx;
+  padding: 0 40rpx;
+  flex: 1;
+  @include flex(column);
+  &-title {
+    @include flex(row);
+    align-items: center;
+    justify-content: center;
+    margin: 24rpx 0;
+    margin-bottom: 44rpx;
+    .icon {
+      width: 20rpx;
+      height: 20rpx;
+      margin: 0 14rpx;
+    }
+    .text {
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #ff6833;
+    }
+  }
+  &-cell {
+    flex: 1;
+    .leader-item {
+      @include flex(row);
+      align-items: center;
+      justify-content: space-between;
+      &-view {
+        @include flex(row);
+        align-items: center;
+        justify-content: center;
+        .num {
+          width: 56rpx;
+          height: 56rpx;
+        }
+        .icon-box {
+          box-shadow: 0 8rpx 16rpx 0 rgba(132, 10, 1, 0.2);
+          width: 116rpx;
+          height: 116rpx;
+          border-radius: 28rpx;
+          margin: 0 24rpx;
+          margin-bottom: 28rpx;
+          .icon {
+            width: 116rpx;
+            height: 116rpx;
+            border-radius: 28rpx;
+          }
+        }
+        .name {
+          font-weight: 500;
+          font-size: 28rpx;
+          color: #1a1a1a;
+        }
+        .text-view {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 56rpx;
+          height: 56rpx;
+          .text {
+            font-family: Barlow-Bold;
+            font-weight: bold;
+            font-size: 28rpx;
+            color: #1a1a1a;
+          }
+        }
+      }
+      &-msg {
+        @include flex(row);
+        align-items: center;
+        justify-content: center;
+        .sort {
+          width: 28rpx;
+          height: 28rpx;
+        }
+        .total {
+          font-family: Barlow-Bold;
+          font-weight: 500;
+          font-size: 32rpx;
+          color: #1a1a1a;
+        }
+      }
+    }
+    .end-text {
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #606060;
+      flex: 1;
+      text-align: center;
+      margin-top: 24rpx;
+      margin-bottom: 154rpx;
+    }
+  }
+}
+.leader-btn {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  border-top-left-radius: 12rpx;
+  border-top-right-radius: 12rpx;
+  background-color: #fff;
+  .view-btn {
+    flex: 1;
+    display: flex;
+    padding: 24rpx;
+    .btn {
+      flex: 1;
+      height: 96rpx;
+      background: #f1431d;
+      border-radius: 12rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+    }
+  }
+}
+</style>

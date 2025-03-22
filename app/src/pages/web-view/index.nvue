@@ -1,0 +1,95 @@
+<template>
+  <global-view :scroll="false" :showBar="noShowBar == 1 ? false : true">
+    <template #bar>
+      <u-navbar
+        bgColor="rgba(0,0,0,0)"
+        :title="pageInfo.title"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="web-view">
+      <web-view
+        ref="webviewRef"
+        style="flex: 1"
+        :webview-styles="webviewStyles"
+        :src="pageInfo.url"
+        @on-post-message="onPostMessage"
+        @message="onPostMessage"
+      ></web-view>
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { onUnload, onLoad, onShow } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import { useCommonStore } from "@/stores/common";
+import { JSBridgeReady } from "./js-bridge-ready";
+
+const props = defineProps({
+  url: {
+    type: String,
+    default: "",
+  },
+  title: {
+    type: String,
+    default: "",
+  },
+  name: {
+    type: String,
+    default: "userPrivacy",
+  },
+  noShowBar: {
+    type: String,
+    default: "",
+  },
+});
+
+const { webviewRef, onPostMessage, messageList } = JSBridgeReady();
+
+const commonStore = useCommonStore();
+
+const webviewStyles = ref({
+  progress: {
+    color: "#1CC7BE",
+  },
+});
+
+const pageInfo = computed(() => {
+  const info = commonStore.platformGreementMap[props.name];
+  return {
+    url: props.url || info?.url || "",
+    title: props.title || info?.title || "",
+  };
+});
+
+onShow(() => {
+  messageList.value.forEach((e) => {
+    onPostMessage(e);
+  });
+});
+
+onLoad(() => {
+  // uni.$on(EVENT_KEY, (event) => {
+  //   console.log("uni.on event", event);
+  // });
+});
+
+onUnload(() => {
+  const currentWebview = plus.webview.currentWebview();
+  if (currentWebview) {
+    plus.webview.close(currentWebview);
+  }
+});
+
+defineExpose({});
+</script>
+
+<style lang="scss" scoped>
+.web-view {
+  flex: 1;
+}
+</style>

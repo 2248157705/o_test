@@ -1,0 +1,504 @@
+<template>
+  <global-view
+    :showBgImage="true"
+    bgImage="/static/images/raffle/raffle_detail_bg.png"
+  >
+    <template #bar>
+      <u-navbar
+        bgColor="rgba(0,0,0,0)"
+        title="奖品详情"
+        color="#3E261B"
+        leftIconColor="#3E261B"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="product-box">
+      <view class="cover-box">
+        <image
+          class="bg"
+          src="/static/images/raffle/raffle_detail_product_bg.png"
+        />
+        <view class="count-down">
+          <bing-countup
+            v-if="status != RaffleProductStatus.ENDED"
+            color="#fff"
+            splitorColor="#ea4730"
+            backgroundColor="#ea4730"
+            :fontSize="16"
+            :autoStart="true"
+            :hour="endTime.hours"
+            :minute="endTime.minutes"
+            :second="endTime.seconds"
+            @timeup="onRefresh"
+          />
+        </view>
+        <view class="cover-swiper">
+          <u-swiper
+            :list="coverList"
+            @change="(e) => (currentNum = e.current)"
+            @click="(index) => previewImages(index)"
+            indicatorStyle="right: 16rpx"
+            radius="18rpx"
+            height="331rpx"
+            circular
+          >
+            <template #indicator>
+              <view class="indicator-num">
+                <image
+                  class="bg"
+                  src="/static/images/raffle/raffle_detail_indicator.png"
+                />
+                <text class="indicator-num__text"
+                  >{{ currentNum + 1 }}/{{ coverList.length }}</text
+                >
+              </view>
+            </template>
+          </u-swiper>
+        </view>
+        <view class="product-msg">
+          <text class="price">¥{{ product.productPrice }}</text>
+          <view class="title">
+            <u--text
+              :lines="2"
+              lineHeight="18"
+              size="26rpx"
+              color="#1F1F1F"
+              :prefixImageStyle="{ height: '44rpx' }"
+              :bold="true"
+              :text="product.productTitle"
+            ></u--text>
+          </view>
+        </view>
+      </view>
+      <view class="msg-box">
+        <image
+          class="bg"
+          src="/static/images/raffle/raffle_detail_msg_bg.png"
+        />
+        <view class="msg-item">
+          <scroll-view class="scroll" scroll-x="true" :show-scrollbar="false">
+            <template v-for="(item, index) in radioList" :key="index">
+              <view class="item">
+                <text class="title">{{ item.label }}</text>
+                <text class="text">{{ item?.value }}</text>
+              </view>
+            </template>
+          </scroll-view>
+          <template v-for="(item, index) in checkboxList" :key="index">
+            <scroll-view
+              class="scroll-list"
+              scroll-x="true"
+              :show-scrollbar="false"
+            >
+              <view class="item checkbox">
+                <text class="title">{{ item.label }}</text>
+                <template v-for="(itemV, indexV) in item.value" :key="indexV">
+                  <text class="text">{{ itemV }}</text>
+                </template>
+              </view>
+            </scroll-view>
+          </template>
+        </view>
+        <view class="tips">
+          <text class="title">温馨提示：</text>
+          <text class="text">1、年满18岁的实名用户每日可享3次抽奖机会。</text>
+          <text class="text">
+            2、中奖者须于开奖后的3个正常工作日内，联系客服领取奖品，超时视为自动放弃奖品。</text
+          >
+          <text class="text">3、奖品随机抽取，公平公正。 </text>
+          <text class="text">4、抽奖结果即时揭晓，敬请关注系统通知。 </text>
+        </view>
+        <view :style="{ height: safeAreaPadding() }"></view>
+      </view>
+    </view>
+    <view
+      class="raffle-operation"
+      :style="{ paddingBottom: safeAreaPadding() }"
+    >
+      <image class="shadow" src="/static/images/common/icon_shadow.png" />
+
+      <view class="bg" :style="{ height: safeAreaPadding() }"></view>
+      <view class="submit-btn-view">
+        <view class="submit-btn-operation">
+          <view class="left">
+            <view class="icon-box">
+              <image
+                class="icon"
+                src="/static/images/raffle/raffle_detail_icon1.png"
+              />
+              <text class="text red">{{
+                status == RaffleProductStatus.UPCOMING ? 0 : raffle.joinNum
+              }}</text>
+            </view>
+            <text class="text">参与人数</text>
+          </view>
+          <view class="content" @tap.stop="handleRaffleBuy"
+            ><image
+              class="price-bg"
+              :src="`/static/images/raffle/raffle_xq_${status}.png`"
+            />
+          </view>
+          <view class="right">
+            <view class="icon-box">
+              <image
+                class="icon"
+                src="/static/images/raffle/raffle_detail_icon2.png"
+              />
+              <text class="text red">仅1份</text>
+            </view>
+            <text class="text">奖品数量</text>
+          </view>
+        </view>
+      </view>
+      <view v-if="status == RaffleProductStatus.UPCOMING" class="start-time">
+        <image
+          class="time-bg"
+          src="/static/images/raffle/raffle_item_time_box.png"
+        />
+        <text class="text">{{ timeTitle }}</text>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { RaffleProductStatus } from "@/enums/raffle";
+import { ProductData } from "@/types/store";
+import GlobalView from "@/components/global-view/index.vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import { getRaffleProductDetail, getRaffleAddPurchase } from "@/api/raffle";
+import { safeAreaPadding } from "@/utils";
+import { throttle } from "lodash-es";
+import { getEventStatus } from "./js/utils";
+import { assembleGameForm, parseGoodsInfo } from "@/gameData";
+import BingCountup from "@/components/bing-countup/index.vue";
+const product: ProductData = ref({});
+const raffle: any = ref({});
+const currentNum: any = ref(0);
+const coverList: any = ref([]);
+const status: any = ref("");
+const endTime: any = ref({});
+const radioList: any = ref({});
+const checkboxList: any = ref({});
+const timeTitle: any = ref("");
+
+const handleClickSwiper = () => {};
+const params = ref({});
+onLoad(async (param) => {
+  params.value = param;
+  await onReload(param);
+});
+
+onShow(() => {
+  onReload(params.value);
+});
+
+const onReload = async (param) => {
+  const { origProductDetail, timeDetail, ...data } =
+    await getRaffleProductDetail(param.id);
+  const { screenshotInfo } = origProductDetail;
+  endTime.value = getEventStatus(timeDetail.startTime, timeDetail.endTime);
+  status.value = param.status;
+  timeTitle.value = param.timeTitle;
+  product.value = origProductDetail;
+  raffle.value = data;
+
+  const screenshot = JSON.parse(screenshotInfo).flatMap((item) => {
+    if (item.url) {
+      return item.url;
+    } else {
+      return Object.values(item);
+    }
+  });
+  coverList.value = screenshot;
+  const gameData = await assembleGameForm(origProductDetail.gameId);
+  const gameInfo = parseGoodsInfo(
+    origProductDetail.goodsInfo,
+    gameData.gameFormData
+  );
+  radioList.value = [
+    {
+      label: "商品编号",
+      value: origProductDetail.productId,
+    },
+    {
+      label: "游戏名称",
+      value: origProductDetail.gameName,
+    },
+  ];
+  radioList.value = radioList.value.concat(
+    gameInfo.filter((item) => item.type == "radio")
+  );
+  checkboxList.value = gameInfo
+    .filter((item) => item.type == "checkbox")
+    .map((item) => {
+      return {
+        label: item.label,
+        value: item.value,
+      };
+    })
+    .slice(0, 3);
+};
+
+const handleRaffleBuy = throttle(() => {
+  const { productId } = product.value;
+  const { raffleNo } = raffle.value;
+
+  if (status.value == RaffleProductStatus.ING) {
+    uni.$main.toast("已参与，等待开奖");
+    return;
+  }
+  if (status.value == RaffleProductStatus.UPCOMING) {
+    uni.$main.toast("即将开始，敬请留意");
+    return;
+  }
+  if (status.value == RaffleProductStatus.YES) {
+    uni.$main.toast("联系客服领奖，若已领取，请忽略");
+    return;
+  }
+
+  if (
+    [RaffleProductStatus.ENDED, RaffleProductStatus.NODE].includes(status.value)
+  ) {
+    uni.$main.toast("抽奖活动已经结束~");
+    return;
+  }
+
+  getRaffleAddPurchase({
+    productId,
+    raffleNo,
+  })
+    .then(async () => {
+      uni.$main.toast("已参与，等待开奖");
+      params.value.status = RaffleProductStatus.ING;
+      await onReload(params.value);
+    })
+    .catch((err) => {
+      uni.log.info(err, "handleRaffleBuy");
+      // onReload();
+    });
+}, 300);
+
+const previewImages = (index) => {
+  uni.previewImage({
+    urls: coverList.value,
+    current: index,
+  });
+};
+
+const onRefresh = () => {
+  status.value = RaffleProductStatus.ONGOING;
+};
+</script>
+
+<style lang="scss" scoped>
+.product-box {
+  padding: 24rpx;
+  .bg {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    flex: 1;
+  }
+  .cover-box {
+    height: 637rpx;
+    position: relative;
+    margin-bottom: 9rpx;
+    .count-down {
+      height: 107rpx;
+      @include flex(row);
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 85rpx;
+      padding-top: 24rpx;
+    }
+    .cover-swiper {
+      padding: 17rpx;
+      .indicator-num {
+        padding: 4rpx 0;
+        background-color: rgba(0, 0, 0, 0.35);
+        border-radius: 200rpx;
+        width: 60rpx;
+        @include flex;
+        justify-content: center;
+        position: relative;
+
+        &__text {
+          font-weight: 400;
+          font-size: 18rpx;
+          color: #ffffff;
+        }
+      }
+    }
+    .product-msg {
+      padding: 0 24rpx;
+      .price {
+        font-family: Barlow-ExtraBold;
+        font-weight: bold;
+        font-size: 46rpx;
+        color: #ff3624;
+        text-decoration: line-through;
+        margin-bottom: 12rpx;
+      }
+    }
+  }
+
+  .msg-box {
+    height: 807rpx;
+    position: relative;
+    margin-bottom: 9rpx;
+    .msg-item {
+      height: 288rpx;
+      margin-top: 107rpx;
+      padding: 0 52rpx;
+      @include flex(column);
+      .scroll {
+        @include flex(row);
+        margin: 35rpx 0;
+        margin-bottom: 45rpx;
+        .item {
+          margin-right: 35rpx;
+          .title {
+            font-weight: 400;
+            font-size: 22rpx;
+            color: #2e2e2e;
+            margin-bottom: 17rpx;
+          }
+          .text {
+            font-weight: 300;
+            font-size: 18rpx;
+            color: #858585;
+          }
+        }
+      }
+
+      .scroll-list {
+        @include flex(row);
+        align-items: center;
+        margin-top: 12rpx;
+        .item {
+          @include flex(row);
+          margin-right: 35rpx;
+          .title {
+            font-weight: 400;
+            font-size: 22rpx;
+            color: #2e2e2e;
+            margin-right: 35rpx;
+          }
+          .text {
+            font-weight: 300;
+            font-size: 18rpx;
+            color: #858585;
+            margin-right: 17rpx;
+          }
+        }
+      }
+    }
+    .tips {
+      padding: 0 43rpx;
+      .title {
+        font-weight: 400;
+        font-size: 26rpx;
+        color: #f44236;
+        margin: 22rpx 0;
+      }
+      .text {
+        font-weight: 400;
+        font-size: 20rpx;
+        color: #858585;
+        line-height: 36rpx;
+      }
+    }
+  }
+}
+
+.raffle-operation {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  z-index: 1000;
+  .shadow {
+    height: 32rpx;
+    flex: 1;
+  }
+  .start-time {
+    width: 230rpx;
+    height: 75rpx;
+    position: absolute;
+    z-index: 9999;
+    right: 150rpx;
+    @include flex(row);
+    align-items: center;
+    padding-left: 12rpx;
+    padding-top: 8rpx;
+    .time-bg {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      top: 0;
+      width: 230rpx;
+      height: 75rpx;
+    }
+    .text {
+      font-family: Barlow-SemiBold;
+      font-weight: bold;
+      font-size: 25rpx;
+      color: #2a2a2a;
+      text-align: center;
+      width: 160rpx;
+    }
+  }
+  .bg {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    flex: 1;
+    background-color: #fffae5;
+  }
+  .submit-btn-view {
+    background-color: #fffae5;
+    flex: 1;
+    padding: 0 40rpx;
+    .submit-btn-operation {
+      flex: 1;
+      @include flex(row);
+      justify-content: space-between;
+      align-items: center;
+      padding: 24rpx;
+      .icon-box {
+        @include flex(row);
+        align-items: flex-end;
+        margin-bottom: 15rpx;
+        .icon {
+          width: 20rpx;
+          height: 24rpx;
+          margin-right: 5rpx;
+        }
+      }
+      .content {
+        .price-bg {
+          width: 356rpx;
+          height: 84rpx;
+        }
+      }
+      .text {
+        font-weight: 400;
+        font-size: 20rpx;
+        color: #b7b7b7;
+        &.red {
+          color: #e74141;
+        }
+      }
+    }
+  }
+}
+</style>

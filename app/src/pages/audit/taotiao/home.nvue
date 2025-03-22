@@ -1,0 +1,143 @@
+<!-- 滑动切换选项卡+吸顶演示（nvue） -->
+<template>
+  <global-view bgColor="linear-gradient(to bottom, #ffffff, #FAFAFA)">
+    <view class="home-content" style="padding: 20rpx">
+      <view v-if="activityList.length > 0" class="activity-container">
+        <u-swiper
+          :list="activityList"
+          radius="0"
+          height="240rpx"
+          keyName="icon"
+          indicator
+          indicatorMode="line"
+          circular
+          @change="(e) => (swiperCurrent = e.current)"
+        >
+          <template #indicator>
+            <view class="indicator">
+              <view
+                v-for="(item, index) in activityList"
+                :key="index"
+                class="indicator__dot"
+                :class="[index === swiperCurrent && 'indicator__dot--active']"
+              >
+              </view>
+            </view>
+          </template>
+        </u-swiper>
+      </view>
+
+      <express-zone />
+
+      <view class="product-box">
+        <view class="title-box">
+          <text class="text">周边好物</text>
+        </view>
+        <view class="product-main">
+          <view v-for="item in productList" :key="item.id" class="product-item">
+            <goods-item :product="item" type="goods-list" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, reactive } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import { useUserStore } from "@/stores/user";
+import ExpressZone from "./components/express-zone.vue";
+import GoodsItem from "./components/goods-item.vue";
+import { getProductList } from "@/api/product";
+
+const userStore = useUserStore();
+const swiperCurrent = ref(0);
+const productList = ref([]);
+
+const activityList = reactive([
+  // {
+  //   icon: "/static/images/home/banner-xxbb.png",
+  //   title: "旭旭宝宝",
+  // },
+  // {
+  //   icon: "/static/images/home/banner-szg.png",
+  //   title: "沙子哥",
+  // },
+  // {
+  //   icon: "/static/images/home/banner-cb.png",
+  //   title: "陈伯",
+  // },
+  // {
+  //   icon: "/static/images/home/banner-aq.png",
+  //   title: "安全",
+  // },
+  // {
+  //   icon: "/static/images/home/banner-aq2.png",
+  //   title: "安全2",
+  // },
+]);
+
+const gameInfo = {
+  id: import.meta.env.VITE_APP_PHYSICAL_GAMEID,
+  category_id: 10,
+  game_name: "周边实物	",
+  icon: "https://static-gamehub-backend.sh28.vip/gamehub-backend/20240904/185659_Jyfc.jpg",
+  sort: 999,
+  initial_key: "S",
+};
+
+onLoad(() => {
+  userStore.setGameHistory(gameInfo);
+  getList();
+});
+
+const getList = async () => {
+  const res = await getProductList({
+    gameId: gameInfo.id,
+    perPage: 20,
+  });
+
+  console.log("getList----", res);
+  if (res) {
+    productList.value = res.data;
+  }
+};
+</script>
+
+<style lang="scss">
+@import "./css/home.scss";
+
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+}
+.swiper-item {
+  padding: 0 12rpx;
+}
+
+.product-box {
+  margin-top: 24rpx;
+  padding: 6rpx;
+  border-radius: 24rpx;
+  background: #fff;
+
+  .title-box {
+    margin-bottom: 20rpx;
+    .text {
+      font-size: 40rpx;
+      font-weight: 800;
+    }
+  }
+  .product-main {
+    @include flex(row);
+    flex-wrap: wrap;
+    justify-content: space-between;
+    .product-item {
+      width: 340rpx;
+    }
+  }
+}
+</style>

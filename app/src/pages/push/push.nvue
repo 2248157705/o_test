@@ -1,0 +1,16 @@
+<template>
+  <view>push</view>
+</template>
+
+<script setup lang="ts">
+import { onLoad, onShow } from "@dcloudio/uni-app";
+
+onLoad((options) => {
+  uni.login.info("push page onload----", options);
+});
+
+onShow((options) => {
+  uni.login.info("push page onShow----", options);
+});
+</script>
+<style lang="scss" scoped></style>

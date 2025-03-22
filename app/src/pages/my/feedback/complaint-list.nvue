@@ -1,0 +1,217 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#F7F9FA"
+        title="投诉记录"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+      </u-navbar>
+    </template>
+
+    <view class="content">
+      <sticky-swiper-item
+        ref="listRef"
+        :showSlotTop="true"
+        :queryApi="queryApi"
+        :queryParams="queryParams"
+        :emptyImg="`/static/images/empty/icon_payouts.png`"
+        pageSizeName="per_page"
+        emptyText="暂无投诉记录"
+      >
+        <template v-slot:default="{ data }">
+          <view class="complaint-item">
+            <view class="title">
+              <text class="text">投诉单号: {{ data.feedback_id }}</text>
+              <template v-if="data.feedback_status === 2">
+                <text class="status">已受理</text>
+              </template>
+              <template v-else-if="data.revoke_status === 2">
+                <text class="status">已撤消</text>
+              </template>
+              <template v-else-if="data.feedback_status === 1">
+                <text class="status red">待处理</text>
+              </template>
+            </view>
+            <view class="label" @click="navigatorToComplaintDetail(data)">
+              <text class="text">投诉对象: {{ data.defendant }}</text>
+              <text class="text">投诉类型: {{ data.feedback_type_name }}</text>
+              <text class="text">{{
+                dayjs(data.created_at * 1000).format("YYYY-MM-DD HH:mm")
+              }}</text>
+            </view>
+
+            <template
+              v-if="data.revoke_status === 1 && data.feedback_status === 1"
+            >
+              <view class="foot">
+                <view class="btn" @click="handleShowRevokeComplaint(data)">
+                  <text class="text">撤销投诉</text>
+                </view>
+              </view>
+            </template>
+            <template v-else>
+              <view class="foot" @click="navigatorToComplaintDetail(data)">
+                <text class="text">查看详情</text>
+                <u-icon
+                  name="arrow-right"
+                  size="32rpx"
+                  bold
+                  color="#AFAFAF"
+                ></u-icon>
+              </view>
+            </template>
+          </view>
+        </template>
+      </sticky-swiper-item>
+    </view>
+    <popup-view
+      ref="popupRef"
+      text="确认撤销投诉"
+      :showConfirmButton="true"
+      :showCancelButton="true"
+      :closeOnClickOverlay="false"
+      :textStyle="{
+        margin: '24rpx 0',
+        fontWeight: 400,
+        fontSize: '32rpx',
+        color: '#1A1A1A',
+      }"
+      @confirm="handleConfirm"
+    ></popup-view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref, nextTick } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import dayjs from "dayjs";
+import GlobalView from "@/components/global-view/index.vue";
+import PopupView from "@/components/my-popup/index.vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import { getComplaintList, revokeComplaint } from "@/api/user";
+
+const { pageHeight, getPageHeight } = TabsSwiper();
+
+const queryApi = ref(getComplaintList);
+const popupRef = ref();
+const listRef = ref();
+const queryParams = ref({
+  per_page: 10,
+});
+
+const selectedData = ref({});
+
+onLoad(() => {
+  nextTick(() => {
+    getPageHeight();
+  });
+});
+
+const navigatorToComplaintDetail = (data) => {
+  uni.navigateTo({
+    url: "/pages/my/feedback/complaint-detail?feedback_id=" + data.feedback_id,
+  });
+};
+const handleShowRevokeComplaint = (data) => {
+  if (data) {
+    selectedData.value = data;
+    popupRef.value?.open();
+  }
+};
+const handleConfirm = async () => {
+  const res = await revokeComplaint(selectedData.value.feedback_id).catch(
+    (err) => {
+      uni.$main.toast("撤销投诉失败");
+    }
+  );
+  if (res) {
+    uni.$main.toast("撤销投诉成功");
+    popupRef.value?.close();
+    listRef.value?.reload();
+  } else {
+    uni.$main.toast("撤销投诉失败");
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  margin: 12rpx;
+
+  .complaint-item {
+    margin-bottom: 16rpx;
+    padding: 24rpx;
+    background: #fff;
+    box-shadow: inset 0rpx -1rpx 0rpx 0rpx #f4f5f6;
+    border-radius: 12rpx 12rpx 12rpx 12rpx;
+  }
+
+  .title {
+    margin-bottom: 16rpx;
+    @include flex(row);
+    align-items: center;
+    justify-content: space-between;
+    height: 60rpx;
+    .text {
+      font-weight: 500;
+      font-size: 32rpx;
+      color: #1a1a1a;
+    }
+    .status {
+      font-weight: 400;
+      font-size: 32rpx;
+      color: #afafaf;
+
+      &.red {
+        color: #f42a2a;
+      }
+    }
+  }
+
+  .label {
+    @include flex(column);
+    padding: 12rpx 0;
+    border-top: 1rpx solid #f4f5f6;
+
+    .text {
+      margin: 12rpx 0;
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #1a1a1a;
+    }
+  }
+
+  .foot {
+    margin-top: 8rpx;
+    @include flex(row);
+    align-items: center;
+    justify-content: space-between;
+    background-color: #fff;
+
+    .text {
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #afafaf;
+    }
+
+    .btn {
+      @include flex(row);
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 72rpx;
+      border-radius: 8rpx 8rpx 8rpx 8rpx;
+      border: 2rpx solid #1cc7be;
+      .text {
+        font-weight: 500;
+        font-size: 28rpx;
+        color: #1cc7be;
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,74 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="余额记录"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+      </u-navbar>
+    </template>
+    <view class="content">
+      <sticky-swiper-item
+        ref="listRef"
+        :showSlotTop="true"
+        :queryApi="queryApi"
+        :queryParams="queryParams"
+        pageSizeName="per_page"
+        path="list"
+        :emptyImg="`/static/images/empty/icon_balance.png`"
+        emptyText="暂无余额记录"
+      >
+        <template v-slot:default="data">
+          <balance-item :item="data.data" />
+        </template>
+      </sticky-swiper-item>
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { ref, nextTick } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import dayjs from "dayjs";
+import GlobalView from "@/components/global-view/index.vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { getBalanceRolloverPageList } from "@/api/order";
+import balanceItem from "./components/balance-item.vue";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+
+const { pageHeight, getPageHeight } = TabsSwiper();
+const queryApi = ref(getBalanceRolloverPageList);
+
+const listRef = ref();
+const queryParams = ref({
+  orders: [
+    {
+      column: "deal_time",
+      asc: true,
+    },
+  ],
+  per_page: 50,
+  start_date: dayjs()
+    .subtract(1, "month") // month
+    .startOf("date")
+    .format("YYYYMMDDHHmmss"),
+  end_date: dayjs().endOf("date").format("YYYYMMDDHHmmss"),
+  // start_date: dayjs().startOf("month").format("YYYYMMDDHHmmss"),
+  // end_date: dayjs().endOf("month").format("YYYYMMDDHHmmss"),
+});
+
+onLoad(() => {
+  nextTick(() => {
+    getPageHeight();
+  });
+});
+</script>
+
+<style lang="scss" scoped>
+.content {
+  margin-top: 24rpx;
+}
+</style>

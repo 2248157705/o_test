@@ -1,0 +1,471 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <z-paging
+      ref="pagePagingRef"
+      nvue-list-id="z-paging-nlist"
+      refresher-only
+      hide-nvue-bottom-tag
+      @on-refresh="onRefresh"
+    >
+      <!-- 这个cell包含了吸顶view和主体列表，其高度必须等于页面可见高度 -->
+      <template #top>
+        <view ref="headerRef">
+          <u-navbar
+            bgColor="#ffffff"
+            title="我卖出的"
+            :placeholder="true"
+            :autoBack="true"
+            :safeAreaInsetTop="true"
+          />
+          <view class="view-container">
+            <search
+              :searchBoxStyle="{ padding: '24rpx 0' }"
+              :disabled="false"
+              @search="handleSearch"
+            />
+            <view class="tabs">
+              <z-tabs
+                ref="tabsRef"
+                barWidth="56rpx"
+                barHeight="8rpx"
+                bg-color="#F7F9FA"
+                :list="tabColumns"
+                :current="current"
+                :inactiveStyle="inactiveStyle"
+                :tabsStyle="tabsStyle"
+                :activeStyle="activeStyle"
+                :barStyle="barStyle"
+                @change="tabsChange"
+              />
+            </view>
+            <view class="dropdown">
+              <fy-dropdown
+                :menuList="menuList"
+                background-color="#F7F9FA"
+                backgroundBoxColor="#F7F9FA"
+                @change="onSortConfirm"
+              />
+            </view>
+          </view>
+        </view>
+      </template>
+      <!-- 吸顶view -->
+      <cell>
+        <view class="paging-content" :style="'height:' + pageHeight + 'px'">
+          <!-- 吸顶view -->
+          <!-- 注意！此处的z-tabs为独立的组件，可替换为第三方的tabs，若需要使用z-tabs，请在插件市场搜索z-tabs并引入，否则会报插件找不到的错误 -->
+
+          <!-- swiper -->
+          <swiper
+            class="swiper"
+            :current="current"
+            @change="swiperChange"
+            @transition="swiperTransition"
+            @animationfinish="swiperAnimationfinish"
+          >
+            <swiper-item
+              v-for="(item, index) in tabColumns"
+              :key="index"
+              class="swiper-item"
+            >
+              <sticky-swiper-item
+                v-slot="data"
+                :ref="(el) => (swiperItems[index] = el)"
+                :tabIndex="index"
+                :currentIndex="current"
+                :queryApi="queryApi"
+                :queryParams="queryParams"
+                :showEmptyReload="true"
+                :emptyImg="`/static/images/empty/${index == tabColumns.length - 1 ? 'icon_audit' : 'icon_default'}.png`"
+                :emptyText="`${index == tabColumns.length - 1 ? '暂无审核' : '暂无数据'}`"
+                emptyReloadText="去发布"
+                @on-empty-reload-click="handleEmptyReloadClick"
+              >
+                <view class="goods-content">
+                  <goods
+                    :product="data.data"
+                    @delist="handleOperation(data.data, 'delist')"
+                    @put="handleOperation(data.data, 'put')"
+                    @modify="handleModify(data.data)"
+                  />
+                </view>
+              </sticky-swiper-item>
+            </swiper-item>
+          </swiper>
+        </view>
+      </cell>
+      <!-- </view> -->
+    </z-paging>
+
+    <delist-popup ref="popupRef" :closeOnClickOverlay="false">
+      <view class="delist-popup">
+        <view class="content">
+          <text class="text">确认要下架吗？</text>
+        </view>
+        <view class="btn-box">
+          <view class="btn cancel" @tap="popupRef.close()">
+            <text class="text">再看看</text>
+          </view>
+          <view class="btn confirm" @tap="handleConfirm">
+            <text class="text">确认</text>
+          </view>
+        </view>
+      </view>
+    </delist-popup>
+
+    <put-popup
+      ref="putPopupRef"
+      :product="currentProduct"
+      @reload="handlePutReload"
+    />
+    <modify-price
+      v-if="currentProduct"
+      ref="modifyPriceRef"
+      :product="currentProduct"
+      @reload="handleModifyReload"
+    />
+  </global-view>
+</template>
+
+<script setup>
+import { ref, watch, computed, nextTick } from "vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import Search from "@/components/search/index.vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import Goods from "@/pages/my/posted-center/components/goods.vue";
+import DelistPopup from "@/components/my-popup/index.vue";
+import PutPopup from "@/pages/goods/components/put-popup.vue";
+import {
+  getSellerProductList,
+  offShelfProduct,
+  // createProduct,
+} from "@/api/product";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import { throttle } from "lodash-es";
+import { ProductStatus } from "@/enums/product";
+import {
+  tabsStyle,
+  inactiveStyle,
+  activeStyle,
+  barStyle,
+} from "@/utils/operation-style";
+
+import FyDropdown from "@/components/fy-dropdown/fy-dropdown.vue";
+import { SearchDropdown } from "@/utils/search-dropdown";
+// import { toCamelCase } from "@/utils";
+import Events, { report, ReportStatus } from "@/utils/report/report";
+
+import modifyPrice from "./components/modify-price.vue";
+const modifyPriceRef = ref(null);
+
+// const reason = ref("");
+// const placeholderStyle = reactive({
+//   fontSize: "24rpx",
+//   color: "#AFAFAF",
+// });
+const queryApi = ref(getSellerProductList);
+
+const putPopupRef = ref(null);
+
+//页面高度
+//header高度
+// const sort = ref("asc");
+//tabs组件的current值，表示当前活动的tab选项
+// const orderByKey = ref("");
+const popupRef = ref(null);
+const currentProduct = ref(null);
+const searchKey = ref(null);
+const tabColumns = ref([
+  { name: "全部", value: ProductStatus.ALL },
+  { name: "已上架", value: ProductStatus.ON_SALE },
+  { name: "交易中", value: ProductStatus.TRADING },
+  { name: "已出售", value: ProductStatus.SOLD_OUT },
+  { name: "已下架", value: ProductStatus.OFF_SALE },
+  { name: "审核", value: ProductStatus.NOT_APPROVED },
+]);
+
+const {
+  headerRef,
+  tabsRef,
+  pagePagingRef,
+  swiperItems,
+  pageHeight,
+  current,
+  tabsChange,
+  swiperAnimationfinish,
+  swiperTransition,
+  swiperChange,
+  getPageHeight,
+  onRefresh,
+  onReload,
+} = TabsSwiper();
+
+const { onSortConfirm, menuList, queryData } = SearchDropdown(onRefresh);
+menuList.value = [
+  {
+    title: "综合排序",
+    dropdownKey: "price",
+    value: "popularity/desc",
+    options: [
+      {
+        label: "综合排序",
+        value: "popularity/desc",
+      },
+      {
+        label: "最新发布",
+        value: "created_at/desc",
+      },
+      {
+        label: "价格降序",
+        value: "product_price/desc",
+      },
+      {
+        label: "价格升序",
+        value: "product_price/asc",
+      },
+    ],
+  },
+];
+const queryParams = computed(() => {
+  const orderBy = queryData.orderByKey.split("/");
+  return {
+    perPage: 20,
+    statusType: tabColumns.value[current.value].value,
+    orderBy: orderBy[1],
+    orderByKey: orderBy[0],
+    searchKey: searchKey.value,
+  };
+});
+
+const reportOrderData = computed(() => {
+  const { id, game_id, game_name, product_price, product_title } =
+    currentProduct.value;
+  return {
+    productId: id, // 商品ID
+    productTitle: product_title, // // 商品名称
+    price: product_price, // 商品价格
+    gameId: game_id, // 游戏ID
+    game: game_name, // 游戏名称
+  };
+});
+
+const handleOperation = (product, type) => {
+  currentProduct.value = product;
+  nextTick(() => {
+    if (type == "put") {
+      report(Events.PRODUCT_UP, reportOrderData.value);
+      putPopupRef.value.open();
+    } else {
+      report(Events.PRODUCT_DOWN, reportOrderData.value);
+      popupRef.value.open();
+    }
+  });
+};
+
+const handleModify = (product) => {
+  currentProduct.value = product;
+  nextTick(() => {
+    modifyPriceRef.value.open();
+  });
+};
+
+const handlePutReload = () => {
+  current.value = tabColumns.value.length - 1;
+  onRefresh();
+};
+
+const handleModifyReload = () => {
+  modifyPriceRef.value.close();
+  onRefresh();
+};
+
+const handleEmptyReloadClick = (e) => {
+  // 禁止默认事件，默认刷新列表
+  e(false);
+  uni.switchTab({ url: "/pages/sell-account/index" });
+};
+
+// const handlePut = throttle(async () => {
+//   currentProduct.value.userQQ = currentProduct.user_qq;
+//   const data = await createProduct(
+//     toCamelCase({ ...currentProduct.value, screenshotType: 1 })
+//   ).catch((err) => {
+//     report(Events.PRODUCT_UP_STATUS, {
+//       ...reportOrderData.value,
+//       status: ReportStatus.FAILED,
+//       errMsg: err.errMsg,
+//     });
+//   });
+//   report(Events.PRODUCT_UP_STATUS, {
+//     ...reportOrderData.value,
+//     status: ReportStatus.SUCCESS,
+//   });
+//   if (data) {
+//     uni.$main.toast("上架申请已提交");
+//     popupRef.value.close();
+//     onRefresh();
+//   }
+// }, 500);
+
+const handleConfirm = throttle(async () => {
+  const data = await offShelfProduct(currentProduct.value.product_id).catch(
+    (err) => {
+      report(Events.PRODUCT_DOWN_STATUS, {
+        ...reportOrderData.value,
+        status: ReportStatus.FAILED,
+        errMsg: err,
+      });
+    }
+  );
+  report(Events.PRODUCT_DOWN_STATUS, {
+    ...reportOrderData.value,
+    status: ReportStatus.SUCCESS,
+  });
+  if (data) {
+    popupRef.value.close();
+    onRefresh();
+  }
+}, 500);
+
+onLoad((options) => {
+  current.value = +options.status || 0;
+  nextTick(() => {
+    getPageHeight();
+  });
+});
+onShow(() => {
+  onReload();
+});
+
+const handleSearch = (search) => {
+  searchKey.value = search;
+  onRefresh();
+};
+
+// 设置子组件嵌套list父容器支持swiper-list吸顶滚动效果的方法
+const setListSpecialEffects = () => {
+  nextTick(() => {
+    swiperItems.value[current.value].setSpecialEffects(0);
+  });
+};
+
+watch(
+  () => current.value,
+  () => {
+    setListSpecialEffects();
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => tabColumns.value,
+  () => {
+    onReload();
+  },
+  { immediate: true }
+);
+
+// watch(
+//   () => headerHeight.value,
+//   () => {
+//     setListSpecialEffects();
+//   }
+// );
+</script>
+
+<style lang="scss" scoped>
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+}
+.delist-popup {
+  flex: 1;
+  @include flex(column);
+  /* max-height: max-content; */
+  .content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32rpx;
+    .text {
+      color: #1a1a1a;
+      font-size: 32rpx;
+      font-weight: 400;
+    }
+  }
+  .btn-box {
+    @include flex(row);
+    justify-content: space-between;
+    .btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 236rpx;
+      height: $app-middle-btn-height;
+      border-radius: $app-box-radius;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+      &.cancel {
+        background-color: #f4f5f6;
+        .text {
+          color: #606060;
+        }
+      }
+      &.confirm {
+        background-color: #1cc7be;
+      }
+    }
+  }
+}
+
+.paging-content {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+}
+.goods-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.view-container {
+  @include flex(column);
+  background-color: #f7f9fa;
+  justify-content: center;
+  flex: 1;
+  padding: 0 24rpx;
+
+  .tab-right {
+    width: 60rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    &.active {
+      transform: rotate(180deg);
+    }
+  }
+  .tabs {
+    flex: 1;
+    // background-color: #f7f9fa !important;
+  }
+  .dropdown {
+    flex: 1;
+    justify-content: center;
+    // #ifndef APP-NVUE
+    box-sizing: border-box;
+    // #endif
+    display: flex;
+    flex-direction: row;
+    z-index: 9999;
+    background-color: #fff;
+  }
+}
+</style>

@@ -1,0 +1,489 @@
+<template>
+  <global-view bgColor="#EFFDFB" :scroll="false">
+    <template #bar>
+      <u-navbar
+        :leftIconColor="top > 0 ? '#000' : '#fff'"
+        :titleStyle="`color:${top > 0 ? '#000' : '#fff'}`"
+        :bgColor="top > 0 ? '#fff' : 'rgba(0,0,0,0)'"
+        :title="top > 0 ? '中介担保' : ''"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+        <template #left>
+          <image
+            v-if="top > 0"
+            class="icon-back"
+            src="/static/images/common/icon_left.png"
+          />
+          <image
+            v-else
+            src="/static/images/guarantee/Icon_back_right.png"
+            class="icon-back"
+          />
+        </template>
+      </u-navbar>
+    </template>
+    <template #bgImage>
+      <scroll-view scroll-y :show-scrollbar="false" @scroll="handleScroll">
+        <view class="guarantee-box">
+          <view class="guarantee-top">
+            <image class="bg" src="/static/images/guarantee/icon_bg.png" />
+            <view class="guarantee-top-box">
+              <image
+                class="title"
+                src="/static/images/guarantee/icon_title1.png"
+              />
+              <view class="msg-box">
+                <view class="top">
+                  <text class="text">选择淘个号平台作为中立方，</text>
+                  <text class="text tips">为交易全程担保，</text>
+                </view>
+                <text class="text">确保资金安全及妥善处理售后事宜。</text>
+              </view>
+            </view>
+          </view>
+
+          <view style="padding: 24rpx; margin-top: -48rpx">
+            <view class="guarantee-content">
+              <view class="title-box">
+                <image
+                  class="title"
+                  src="/static/images/guarantee/icon_title2.png"
+                />
+                <view class="msg">
+                  <image
+                    class="sj"
+                    src="/static/images/guarantee/icon_sj.png"
+                  />
+                </view>
+              </view>
+              <image
+                class="plan"
+                src="/static/images/guarantee/icon_item.png"
+              />
+              <view class="bottom-msg">
+                <image
+                  class="icon"
+                  src="/static/images/guarantee/icon_tips.png"
+                />
+                <view class="tips">
+                  <text class="text">中介担保费：</text>
+                  <text class="text msg">号价×2%，最低收费10元。</text>
+                </view>
+              </view>
+            </view>
+            <view class="guarantee-tips">
+              <image
+                class="title"
+                src="/static/images/guarantee/icon_title3.png"
+              />
+              <image
+                class="cover"
+                src="/static/images/guarantee/icon_cover.png"
+              />
+              <template v-for="(item, index) in guaranteeTips">
+                <view class="guarantee-tips-item">
+                  <view class="item-title">
+                    <image
+                      class="num"
+                      :src="`/static/images/guarantee/icon_num${index + 1}.png`"
+                    />
+                    <text class="tips">{{ item.title }}</text>
+                  </view>
+                  <view class="item-box">
+                    <view class="item-line">
+                      <image
+                        v-if="index != guaranteeTips.length - 1"
+                        class="line"
+                        src="/static/images/guarantee/icon_line.png"
+                      />
+                    </view>
+                    <view class="item-box-msg">
+                      <view
+                        class="text-box"
+                        :class="{
+                          none: item.none,
+                          [`text-box-${index + 1}`]: true,
+                        }"
+                      >
+                        <text class="text">{{ item.tips }}</text>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </template>
+            </view>
+            <view class="guarantee-hint">
+              <text class="title">温馨提示：</text>
+              <view class="hint-box">
+                <text class="text"
+                  >1、验号期间与描述不符合，双方协商取消，全额退款。</text
+                >
+                <text class="text"
+                  >2、确认收货后，申话售后，审核通过中介费不退。</text
+                >
+                <text class="text">
+                  3、如交易账号已在淘个号APP或官网上架过，请下架后再进行交易，以免造成不必要纠纷。</text
+                >
+                <text class="text">
+                  4、本平台只为年满18周岁的成年人提供账号交易，如果您是未成年擅自使用成年家属身份交易的，视为成年家属自己的行为。</text
+                >
+                <text class="text">
+                  5、部分账号绑定渠道若存在多游戏连体的情况请在交易群内说明。</text
+                >
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </template>
+
+    <view class="submit-btn-view" :style="{ paddingBottom: safeAreaPadding() }">
+      <view class="submit-btn-operation" @click="handleCS">
+        <my-button
+          height="96"
+          radius="12"
+          type="primary"
+          openType="customer_service"
+          text="联系客服"
+        />
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import GlobalView from "@/components/global-view/index.vue";
+import { safeAreaPadding } from "@/utils";
+import Events, { report } from "@/utils/report/report";
+const top = ref(0);
+
+const guaranteeTips = ref([
+  {
+    title: "提前准备",
+    tips: "买卖双方协商游戏账号价格、确认账号状态、中介费由谁进行承担等。",
+  },
+  {
+    title: "拉群组",
+    tips: "在中介页面选择对应游戏，联系官方客服，提供双方平台注册手机号，客服在APP内拉起群组。",
+  },
+  {
+    title: "包赔服务",
+    tips: "群内客服发交易须知/交易流程/包赔信息等，买卖方告知客服 游戏类型/游戏账号金额/包赔服务等。",
+  },
+  {
+    title: "平台收款",
+    tips: "买家支付手续费及交易费用给平台，中介费可双方协商，由其中一方出。",
+  },
+  {
+    title: "双方交易",
+    tips: "买卖双方在群内进行验号、换绑。",
+    none: true,
+  },
+  {
+    title: "账号无误",
+    tips: "买家确认账号信息无误，通知客服。",
+    none: true,
+  },
+  {
+    title: "签署合同",
+    tips: "签署具备法律效用的合同，强力保障用户权益。",
+  },
+  {
+    title: "平台打款",
+    tips: "签署合同完毕，交易费用自动进行放款至卖家账户余额。",
+  },
+  {
+    title: "售后保障",
+    tips: "账号被找回，买家可联系平台客服。即刻起15天内找回账号，无法找回按购买服务类型进行赔付。",
+  },
+]);
+
+const handleScroll = (e) => {
+  top.value = e.detail.scrollTop;
+};
+const handleCS = () => {
+  report(Events.SELL_GUARANTEE_CS);
+};
+</script>
+
+<style lang="scss">
+.icon-back {
+  width: 48rpx;
+  height: 48rpx;
+}
+.guarantee-box {
+  margin-bottom: 150rpx;
+  /* @include flex(column); */
+  .guarantee-top {
+    position: relative;
+    height: 766rpx;
+    @include flex(column);
+    justify-content: flex-end;
+    padding: 24rpx;
+    .bg {
+      position: absolute;
+      right: 0;
+      left: 0;
+      top: 0;
+      flex: 1;
+      height: 716rpx;
+    }
+    .guarantee-top-box {
+      background: linear-gradient(to bottom, #e8fffb, #fff);
+      padding: 32rpx;
+      border-radius: 24rpx;
+      margin-bottom: 24rpx;
+      .title {
+        width: 380rpx;
+        height: 68rpx;
+        margin-bottom: 16rpx;
+      }
+      .msg-box {
+        padding: 20rpx;
+        background: #f4f5f6;
+        border-radius: 8rpx;
+        .top {
+          @include flex(row);
+          align-items: center;
+        }
+        .text {
+          font-weight: 400;
+          font-size: 28rpx;
+          color: #1a1a1a;
+          margin: 6rpx 0;
+          &.tips {
+            color: $app-main-color;
+          }
+        }
+      }
+    }
+  }
+
+  .guarantee-content {
+    background: #fff;
+    padding: 32rpx;
+    border-radius: 24rpx;
+    margin-bottom: 24rpx;
+    .title-box {
+      @include flex(row);
+      align-items: center;
+      justify-content: space-between;
+      .title {
+        width: 380rpx;
+        height: 68rpx;
+        margin-bottom: 16rpx;
+      }
+      .msg {
+        @include flex(row);
+        align-items: center;
+        .sj {
+          width: 40rpx;
+          height: 24rpx;
+          margin-right: 8rpx;
+        }
+        .text {
+          font-family: Barlow-Black;
+          font-size: 28rpx;
+          color: $app-main-color;
+          margin: 0 8rpx;
+        }
+        .unit {
+          font-family: Barlow-Black;
+          font-size: 28rpx;
+          color: $app-main-color;
+          font-weight: 900;
+        }
+        .price {
+          font-weight: 900;
+          font-family: Barlow-Black;
+          font-size: 40rpx;
+          color: $app-main-color;
+          margin-top: -8rpx;
+        }
+      }
+    }
+    .plan {
+      width: 638rpx;
+      height: 236rpx;
+      margin: 24rpx 0;
+    }
+    .bottom-msg {
+      @include flex(row);
+      align-items: center;
+      .icon {
+        width: 40rpx;
+        height: 40rpx;
+        margin: 0 8rpx;
+      }
+      .tips {
+        @include flex(row);
+        align-items: center;
+        .text {
+          font-weight: 600;
+          font-size: 32rpx;
+          color: #1cc7be;
+          &.msg {
+            font-weight: 400;
+          }
+        }
+      }
+    }
+  }
+
+  .guarantee-tips {
+    background: #fff;
+    padding: 32rpx;
+    border-radius: 24rpx;
+    margin-bottom: 24rpx;
+    position: relative;
+    .cover {
+      position: absolute;
+      right: 48rpx;
+      top: 0rpx;
+      width: 172rpx;
+      height: 160rpx;
+    }
+    .title {
+      width: 380rpx;
+      height: 68rpx;
+      margin-bottom: 16rpx;
+    }
+    .guarantee-tips-bg {
+      flex: 1;
+      height: 80rpx;
+      background: linear-gradient(to bottom, #e4fdfe, #fff);
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+    }
+
+    .guarantee-tips-item {
+      padding: 20rpx 0;
+      .item-title {
+        @include flex(row);
+        align-items: center;
+        margin-bottom: 12rpx;
+        .num {
+          width: 36rpx;
+          height: 44rpx;
+          border-radius: 50%;
+          position: relative;
+          margin-right: 14rpx;
+        }
+        .tips {
+          font-weight: 600;
+          font-size: 32rpx;
+          color: #1a1a1a;
+          margin-top: 10rpx;
+        }
+      }
+      .item-box {
+        @include flex(row);
+        flex: 1;
+        .item-line {
+          margin: 0 15rpx;
+          margin-top: 12rpx;
+          .line {
+            width: 2rpx;
+            flex: 1;
+          }
+        }
+        .item-box-msg {
+          flex: 1;
+          flex-wrap: wrap;
+          background-color: #f4f5f6;
+          border-radius: 8rpx;
+          padding: 20rpx;
+          .text-box {
+            padding-bottom: 48rpx;
+            .text {
+              font-weight: 400;
+              font-size: 32rpx;
+              color: #1a1a1a;
+              line-height: 58rpx;
+            }
+            &.none {
+              padding-bottom: 0rpx;
+            }
+            &-3 {
+              padding-bottom: 108rpx;
+            }
+            &-2 {
+              padding-bottom: 108rpx;
+            }
+            &-9 {
+              padding-bottom: 108rpx;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .guarantee-hint {
+    background: #fff;
+    padding: 32rpx;
+    border-radius: 24rpx;
+    margin-bottom: 24rpx;
+    position: relative;
+    .title {
+      font-weight: 900;
+      font-size: 32rpx;
+      color: #1a1a1a;
+      line-height: 44rpx;
+      margin-bottom: 12rpx;
+    }
+    .hint-box {
+      background: #f4f5f6;
+      border-radius: 8rpx;
+      padding: 20rpx;
+      .text {
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #1a1a1a;
+        line-height: 50rpx;
+      }
+    }
+  }
+}
+
+.submit-btn-view {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background-color: #fff;
+  z-index: 1000;
+  .submit-btn-operation {
+    flex: 1;
+    display: flex;
+    padding: 24rpx;
+    .submit-btn {
+      flex: 1;
+      height: 96rpx;
+      background-color: $app-main-color;
+      border-radius: $app-box-radius;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: row;
+      .text {
+        font-weight: 600;
+        font-size: 32rpx;
+        color: #ffffff;
+        margin: 0 6rpx;
+        &.tips {
+          font-weight: 400;
+          font-size: 32rpx;
+          color: #ffffff;
+        }
+      }
+    }
+  }
+}
+</style>

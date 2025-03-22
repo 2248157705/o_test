@@ -1,0 +1,194 @@
+<template>
+  <global-view :showBar="false">
+    <view class="content-view">
+      <view :style="`height: ${windowHeight}px;padding:24rpx`">
+        <sticky-swiper-item
+          ref="pagingRef"
+          :showSlotTop="true"
+          :queryApi="queryApi"
+          :queryParams="queryParams"
+        >
+          <template #top>
+            <u-status-bar />
+
+            <view class="top-content" ref="headerRef" id="headerRef">
+              <view class="search">
+                <view class="left" @click="handleBack">
+                  <u--image
+                    width="48rpx"
+                    height="48rpx"
+                    src="/static/images/common/icon_left.png"
+                  />
+                </view>
+                <search
+                  :disabled="false"
+                  :searchVal="searchKey"
+                  @search="handleSearch"
+                  :searchBoxStyle="{ padding: 0 }"
+                />
+                <toggle-preview :line="false" />
+              </view>
+              <view class="fy-dropdown">
+                <fy-dropdown
+                  :spaceBetween="true"
+                  :menuList="menuList"
+                  @change="onSortConfirm"
+                />
+              </view>
+            </view>
+          </template>
+          <template v-slot:default="data">
+            <goods-item type="goods-list" :product="data.data" />
+          </template>
+        </sticky-swiper-item>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, computed, nextTick } from "vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { getProductList } from "@/api/product";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import Search from "@/components/search/index.vue";
+import GoodsItem from "@/components/goods-item-preview/index.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import FyDropdown from "@/components/fy-dropdown/fy-dropdown.vue";
+import { SearchDropdown } from "@/utils/search-dropdown";
+import TogglePreview from "@/components/sticky-swiper-item/toggle-preview.vue";
+
+const queryApi = ref(getProductList);
+const pagingRef = ref(null);
+const windowHeight = ref(0);
+
+nextTick(() => {
+  windowHeight.value = uni.getSystemInfoSync().windowHeight;
+});
+const { onSortConfirm, menuList, queryData, setDropdown } = SearchDropdown(
+  () => {
+    pagingRef.value.reload();
+  }
+);
+menuList.value = [
+  {
+    title: "综合排序",
+    dropdownKey: "price",
+    value: "popularity/desc",
+    options: [
+      {
+        label: "综合排序",
+        value: "popularity/desc",
+      },
+      {
+        label: "最新发布",
+        value: "created_at/desc",
+      },
+      {
+        label: "价格降序",
+        value: "product_price/desc",
+      },
+      {
+        label: "价格升序",
+        value: "product_price/asc",
+      },
+      {
+        label: "最多收藏",
+        value: "collection_number/desc",
+      },
+    ],
+  },
+  {
+    title: "账号分类",
+    dropdownKey: "classification",
+    type: "tree",
+    disabled: true,
+    options: [],
+  },
+  {
+    title: "价格",
+    dropdownKey: "priceFilter",
+    type: "filter",
+    value: {
+      priceStart: "",
+      priceEnd: "",
+    },
+    options: [],
+  },
+  {
+    title: "筛选",
+    dropdownKey: "filter",
+    type: "column",
+    disabled: true,
+    options: [],
+  },
+];
+
+const searchKey = ref(null);
+const gameId = ref(null);
+const queryParams = computed(() => {
+  const orderBy = queryData.orderByKey.split("/");
+  const param = {};
+  if (gameId.value) {
+    param.gameId = gameId.value;
+  }
+  return {
+    ...param,
+    perPage: 20,
+    orderBy: orderBy[1],
+    orderByKey: orderBy[0],
+    searchKey: searchKey.value,
+    showLoading: true,
+    ...queryData.filter,
+  };
+});
+
+const handleBack = () => {
+  uni.navigateBack();
+};
+
+onLoad(async (data) => {
+  if (data.id) {
+    queryParams.value.gameId = data.id;
+    gameId.value = data.id;
+    setDropdown(data?.id);
+  }
+  if (data.searchKey) {
+    searchKey.value = data.searchKey;
+  }
+});
+
+onShow(() => {
+  if (uni.getStorageSync("searchKey")) {
+    searchKey.value = uni.getStorageSync("searchKey");
+    pagingRef.value && pagingRef.value.reload();
+    uni.removeStorageSync("searchKey");
+  }
+});
+
+const handleSearch = (search) => {
+  searchKey.value = search;
+  pagingRef.value.reload();
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+.content-view {
+  @include flex(column);
+  flex: 1;
+  .top-content {
+    @include flex(column);
+    .search {
+      @include flex(row);
+      align-items: center;
+      .left {
+        margin-right: 24rpx;
+      }
+    }
+    .fy-dropdown {
+      /* padding: 0 24rpx; */
+    }
+  }
+}
+</style>

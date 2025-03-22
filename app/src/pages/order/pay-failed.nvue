@@ -1,0 +1,59 @@
+<template>
+  <global-view bgColor="linear-gradient(to bottom, #ffffff, #FAFBFE)">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="支付通知"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="view-container">
+      <view class="success-view">
+        <view class="view">
+          <u--image
+            width="240rpx"
+            height="240rpx"
+            src="/static/images/sell/icon_success.png"
+          />
+          <text class="msg">支付失败</text>
+          <text class="intro">点击下方按钮进入群聊，等待卖家进行交易</text>
+          <view class="success-box">
+            <view class="btn full" @click="handleIM"
+              ><text class="text">订单详情</text></view
+            >
+          </view>
+        </view>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+
+const orderId = ref(null);
+
+onLoad((options) => {
+  if (options.orderId) {
+    orderId.value = options.orderId;
+  }
+});
+
+const handleIM = () => {
+  uni.navigateTo({
+    url: `/pages/order/detail?orderId=${orderId.value}`,
+  });
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/pages/sell-account/sell-information-enter/index.scss";
+
+.view-container {
+  margin-top: 44rpx;
+}
+</style>

@@ -1,0 +1,298 @@
+// 通知消息标题
+def MESSAGE_TITLE = 'gamehub-apk包构建通知'
+def DINGTALK_TEXT = [
+    "**${MESSAGE_TITLE}**  ",
+    "任务ID: **${BUILD_NUMBER}**  ",
+    "分支: **${BRANCH_NAME}**  ",
+    "构建环境: **${params.BUILD_ENV}**  "
+]
+def DINGTALK_FAILED_TEXT = DINGTALK_TEXT
+def APK_OUTPUT=""
+def APP_PATH=""
+Long APP_VERSION_CODE
+def WGT_BUILD=false
+def WGT_PATH=""
+def CALLBACK_URL=""
+def FIND_SCRIPT = '''
+    #!/bin/bash
+    set -eo pipefail
+    basename $(find ./ -maxdepth 1 -cmin -2 -type f -name "*.%1$s" | grep -Eo ".*\\.%1$s")
+'''
+def SIZE_SCRIPT = '''
+    #!/bin/bash
+    set -eo pipefail
+    du -b %s | awk \'{ print $1 }\'
+'''
+def REQUEST_BODY = ""
+def WGT_PREFIX = ""
+
+
+pipeline {
+    agent { label 'gamehub-testserver' }
+
+    options { 
+        timestamps()
+        disableRestartFromStage()
+        disableConcurrentBuilds() 
+        disableResume()
+        buildDiscarder(logRotator(artifactDaysToKeepStr: '180', daysToKeepStr: '180'))
+    }
+
+    environment {
+        // gitlab地址
+        GIT_REPOSITORY = 'ssh://git@gitlab.shanghaierba.com:8022/gamehub/app-client.git'
+        // gitlab部署密钥credentialsId
+        GITLAB_DEPLOY_KEY_ID = 'gamehub-deploy-key'
+        // 安卓SDK目录
+        ANDROID_SDK_ROOT = '/usr/local/android_sdk'
+        // 添加cli路径
+        PATH="/usr/local/jdk-11.0.24+8/bin:/usr/local/gradle-6.7.1/bin:/usr/local/android_sdk/cmdline-tools/12.0/bin:${env.PATH}"
+        // 对象存储配置文件
+        QCLOUD_COSCLI_COS_CONFIG = credentials('gamehub-qcloud-coscli-conf')
+        // app对象存储默认路径
+        BUCKET_PATH='cos://gamehub-client-1326698724'
+        // apk包上传路径
+        APK_UPLOAD_DIR = '/walle/apk'
+        // 热更包输出目录
+        WGT_OUTPUT="${WORKSPACE}/dist/build"
+        // 热更包上传路径
+        WGT_UPLOAD_DIR = '/walle/wgt'
+        // 在 jenkins 系统管理添加机器人得到的 id, jenkins 需要安装 DingTalk
+        DINGTALK_ROBOT_ID = 'gamehub-dingtalk-php'
+    }
+
+    parameters {
+        booleanParam(name: 'Refresh', defaultValue: false, description: '是否只更新Jenkins流水线配置, 不更新代码')
+        choice(name: 'BUILD_ENV', choices: ['debug','debug&wgt', 'release', 'release&wgt'], description: '请选择构建环境')
+        string(name: 'APP_DOMAIN', defaultValue: 'https://static-gamehub-client.sh28.vip', trim: true, description: '请输入app包下载域名. 一般默认即可')
+        booleanParam(name: 'IS_CALLBACK', defaultValue: true, description: '是否通知回调')
+    }
+
+    stages {
+        stage('Read Jenkinsfile') {
+            when {
+                expression { return params.Refresh == true }
+            }
+            steps {
+                echo("更新Jenkins流水线配置完成")
+            }
+        }
+
+        stage('Run Jenkinsfile') {
+            when {
+                expression { return params.Refresh == false }
+            }
+            stages {
+                stage('Clone') {
+                    steps {
+                        echo '克隆git仓库'
+                        git branch: "$BRANCH_NAME", credentialsId: "$GITLAB_DEPLOY_KEY_ID", url: "$GIT_REPOSITORY"
+                    }
+                }
+                stage('Build') {
+                    steps {
+                        nodejs(nodeJSInstallationName: 'Node v21', configId: 'nodejs-aliyun-registry') {
+                            sh 'npm i -S'
+                            // 打包失败可能是cpu或内存不足
+                            script {
+                                switch(params.BUILD_ENV) {
+                                    case "debug":
+                                        CALLBACK_URL= "https://trade-admin-test.sh28.vip/admin/apkPackage/addApkInfo"
+                                        APK_OUTPUT="${WORKSPACE}/build-app/android_debug/app/build/outputs/channels"
+                                        WGT_PREFIX="vip.taogehaotest"
+                                        sh '''#!/bin/bash
+                                            set -eo pipefail
+                                            npm run update:manifest
+                                            npm run build:android-dev
+                                            npm run build:android:copy-debug
+                                            cd ./build-app/android_debug
+                                            gradle assembleReleaseChannels -PchannelList=other -PextraInfo=campaign_id:debug --no-daemon
+                                        '''
+                                    break
+                                    case "debug&wgt":
+                                        CALLBACK_URL= "https://trade-admin-test.sh28.vip/admin/apkPackage/addApkInfo"
+                                        APK_OUTPUT="${WORKSPACE}/build-app/android_debug/app/build/outputs/channels"
+                                        WGT_BUILD=true
+                                        WGT_PREFIX="vip.taogehaotest"
+                                        sh '''#!/bin/bash
+                                            set -eo pipefail
+                                            npm run update:manifest
+                                            npm run build:android-dev
+                                            npm run build:android:copy-debug
+                                            npm run build:wgt
+                                            cd ./build-app/android_debug
+                                            gradle assembleReleaseChannels -PchannelList=other -PextraInfo=campaign_id:debug --no-daemon
+                                        '''
+                                    break
+                                    case "release":
+                                        CALLBACK_URL= "https://trade-admin.sh28.vip/admin/apkPackage/addApkInfo"
+                                        APK_OUTPUT="${WORKSPACE}/build-app/android/app/build/outputs/channels"
+                                        WGT_PREFIX="vip.taogehao"
+                                        sh '''#!/bin/bash
+                                            set -eo pipefail
+                                            npm run update:manifest
+                                            npm run build:android-prod
+                                            npm run build:android:copy-prod
+                                            cd ./build-app/android
+                                            gradle assembleReleaseChannels -PchannelList=other -PextraInfo=campaign_id:release --no-daemon
+                                        '''
+                                    break
+                                    case "release&wgt":
+                                        CALLBACK_URL= "https://trade-admin.sh28.vip/admin/apkPackage/addApkInfo"
+                                        APK_OUTPUT="${WORKSPACE}/build-app/android/app/build/outputs/channels"
+                                        WGT_BUILD=true
+                                        WGT_PREFIX="vip.taogehao"
+                                        sh '''#!/bin/bash
+                                            set -eo pipefail
+                                            npm run update:manifest
+                                            npm run build:android-prod
+                                            npm run build:android:copy-prod
+                                            npm run build:wgt
+                                            cd ./build-app/android
+                                            gradle assembleReleaseChannels -PchannelList=other -PextraInfo=campaign_id:release --no-daemon
+                                        '''
+                                    break
+                                    default:
+                                        error "无效构建环境"
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Upload and callback') {
+                    steps {
+                        script {
+                            dir("$APK_OUTPUT") {
+                                script {
+                                    def app_name = sh(returnStdout: true,
+                                        script: String.format(FIND_SCRIPT, "apk")
+                                    ).trim()
+                                    Long app_size = sh(returnStdout: true,
+                                        script: String.format(SIZE_SCRIPT, app_name)
+                                    ).trim() as Long
+                                    def app_version_name = app_name.split('-')[2].replace('v', '')
+                                    APP_VERSION_CODE = app_name.split('-')[3] as Long
+                                    APP_PATH = "${env.APK_UPLOAD_DIR}/${app_name}"
+                                    REQUEST_BODY = """
+                                        \"apkName\": \"${app_name}\",
+                                        \"description\": \"from jenkins build\",
+                                        \"versionName\": \"${app_version_name}\",
+                                        \"versionCode\": ${APP_VERSION_CODE},
+                                        \"apkSize\": ${app_size}
+                                    """
+
+                                    if (app_name == "") {
+                                        error "获取App详情失败. 名称: ${app_name}, 大小: ${app_size}, " + 
+                                                "版本: ${app_version_name}, 构建版本: ${APP_VERSION_CODE}"
+                                    }
+
+                                    echo '上传apk到对象存储'
+                                    sh '#!/bin/bash\n set -eo pipefail; ' +
+                                        'coscli --config-path ' + "${env.QCLOUD_COSCLI_COS_CONFIG} " +
+                                        'cp ' + "${app_name} ${env.BUCKET_PATH}/${APP_PATH}"
+                                }
+                            }
+                            if (WGT_BUILD) {
+                                dir("$WGT_OUTPUT") {
+                                    script {
+                                        def wgt_name = sh(returnStdout: true,
+                                            script: String.format(FIND_SCRIPT, "wgt")
+                                        ).trim()
+                                        if (wgt_name == "") {
+                                            error "获取wgt名称失败"
+                                        }
+                                        Long wgt_size = sh(returnStdout: true,
+                                            script: String.format(SIZE_SCRIPT, wgt_name)
+                                        ).trim() as Long
+
+                                        echo '上传热更包到对象存储'
+                                        WGT_PATH="${env.WGT_UPLOAD_DIR}/${WGT_PREFIX}/${APP_VERSION_CODE}/${wgt_name}"
+                                        sh '#!/bin/bash\n set -eo pipefail; ' +
+                                            'coscli --config-path ' + "${env.QCLOUD_COSCLI_COS_CONFIG} " +
+                                            'cp ' + "${wgt_name} ${env.BUCKET_PATH}/${WGT_PATH}"
+                                        REQUEST_BODY += ", \"wgtName\": \"${wgt_name}\", \"wgtSize\": ${wgt_size}"
+
+                                    }
+                                }
+                            }
+                            if (env.IS_CALLBACK) {
+                                REQUEST_BODY = "{" + REQUEST_BODY + "}"
+                                echo '通知回调body: ' + REQUEST_BODY
+                                def is_callback_err = false
+                                def err_msg = ""
+                                try {
+                                    def resp = httpRequest acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON',
+                                                            httpMode: 'POST', timeout: 60,
+                                                            requestBody: REQUEST_BODY,
+                                                            url: "${CALLBACK_URL}"
+                                    if (! resp.content.contains('{"code":200')) {
+                                        is_callback_err = true
+                                        err_msg = resp.content
+                                    }
+                                } catch(err) {
+                                    is_callback_err = true
+                                    err_msg = err
+                                }
+                                if (is_callback_err) {
+                                    err_msg = "通知回调失败. ${err_msg}"
+                                    DINGTALK_FAILED_TEXT.add("报错详情: <font color=\"#FF3333\">${err_msg}</font>  ")
+                                    error "$err_msg"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs(deleteDirs: true, patterns: [
+                [pattern: 'build-app/android/app/build/outputs', type: 'INCLUDE'],
+                [pattern: 'build-app/android_debug/app/build/outputs', type: 'INCLUDE']
+            ])
+        }
+        success {
+            // jenkins 需要安装 DingTalk
+            script {
+                DINGTALK_TEXT.add('状态: <font color="#33CC00">成功</font>  ')
+                DINGTALK_TEXT.add("**[查看任务](${BUILD_URL})**")
+                DINGTALK_TEXT.add("**[查看详情](${RUN_DISPLAY_URL})**")
+                DINGTALK_TEXT.add("**[app下载地址](${params.APP_DOMAIN}${APP_PATH})**  ")
+            }
+            dingtalk (
+                robot: "$DINGTALK_ROBOT_ID",
+                type: 'MARKDOWN',
+                title: "$MESSAGE_TITLE",
+                text: DINGTALK_TEXT
+            )
+        }
+        failure {
+            script {
+                DINGTALK_FAILED_TEXT.add('状态: <font color="#FF3333">失败</font>  ')
+                DINGTALK_FAILED_TEXT.add("**[查看任务](${BUILD_URL})**")
+                DINGTALK_FAILED_TEXT.add("**[查看详情](${RUN_DISPLAY_URL})**  ")
+            }
+            dingtalk (
+                robot: "$DINGTALK_ROBOT_ID",
+                type: 'MARKDOWN',
+                title: "$MESSAGE_TITLE",
+                text: DINGTALK_FAILED_TEXT
+            )
+        }
+        aborted {
+            script {
+                DINGTALK_FAILED_TEXT.add('状态: <font color="#FF3333">超时或取消</font>  ')
+                DINGTALK_FAILED_TEXT.add("**[查看任务](${BUILD_URL})**")
+                DINGTALK_FAILED_TEXT.add("**[查看详情](${RUN_DISPLAY_URL})**  ")
+            }
+            dingtalk (
+                robot: "$DINGTALK_ROBOT_ID",
+                type: 'MARKDOWN',
+                title: "$MESSAGE_TITLE",
+                text: DINGTALK_FAILED_TEXT
+            )
+        }
+    }
+}

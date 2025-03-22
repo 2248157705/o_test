@@ -1,0 +1,665 @@
+<template>
+  <global-view
+    :showBar="false"
+    :showBgImage="true"
+    bgImage="/static/images/raffle/bg.png"
+  >
+    <template #bgImage>
+      <view class="top-bg-view"> </view>
+    </template>
+    <z-paging
+      ref="pagePagingRef"
+      nvue-list-id="z-paging-nlist"
+      refresher-only
+      hide-nvue-bottom-tag
+      :enable-back-to-top="true"
+      :show-scrollbar="false"
+      @on-refresh="onRefresh"
+    >
+      <template #top>
+        <view ref="headerRef">
+          <view>
+            <u-navbar
+              bgColor="rgba(0,0,0,0)"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+              height="88rpx"
+              leftIconColor="#3E261B"
+            />
+          </view>
+          <view class="right-content">
+            <image
+              class="rule cover"
+              src="/static/images/raffle/raffle_rule.png"
+              @tap="popupExplainShow = true"
+            />
+            <image
+              class="record cover"
+              src="/static/images/raffle/raffle_record.png"
+              @tap="handleGoList"
+            />
+          </view>
+          <view class="top-content">
+            <image class="bg-view" src="/static/images/raffle/raffle_box.png" />
+            <view v-if="timeId" class="tabs">
+              <z-tabs
+                ref="tabsRef"
+                bgColor="rgba(0,0,0,0)"
+                scrollCount="3"
+                :list="tabColumns"
+                :current="current"
+                :inactiveStyle="inactiveStyle"
+                :tabsStyle="tabsStyle"
+                :activeStyle="activeStyle"
+                :barStyle="barStyle"
+                @change="tabsChange"
+              >
+                <template #content="{ data, active, thatCurrent }">
+                  <template
+                    v-if="showNextCountUp(thatCurrent, data.value.status)"
+                  >
+                    <view class="hide">
+                      <bing-countup
+                        color="#fff"
+                        splitorColor="#ea4730"
+                        backgroundColor="#ea4730"
+                        splitorMargin="1rpx"
+                        :fontSize="16"
+                        :autoStart="true"
+                        :hour="data.value.hours"
+                        :minute="data.value.minutes"
+                        :second="data.value.seconds"
+                        @timeup="handleReload"
+                      />
+                    </view>
+                  </template>
+                  <view
+                    class="bing-view"
+                    :class="{
+                      active,
+                      start: thatCurrent == 0,
+                      end: thatCurrent == tabColumns.length - 1,
+                    }"
+                  >
+                    <template v-if="active">
+                      <image
+                        class="active-bg"
+                        src="/static/images/raffle/raffle_item_active.png"
+                      />
+                    </template>
+
+                    <template
+                      v-if="
+                        !active &&
+                        thatCurrent != current - 1 &&
+                        thatCurrent != tabColumns.length - 1
+                      "
+                    >
+                      <view class="line"></view>
+                    </template>
+
+                    <template
+                      v-if="data.value.status == RaffleShowStatus.ENDED"
+                    >
+                      <view class="bing-view-box">
+                        <text
+                          class="box-title"
+                          :class="{
+                            active,
+                          }"
+                          >{{ data.timeTitle }}</text
+                        >
+                        <text
+                          class="box-status"
+                          :class="{
+                            active,
+                          }"
+                          >{{ data.value.status }}</text
+                        >
+                      </view>
+                    </template>
+
+                    <template
+                      v-else-if="data.value.status == RaffleShowStatus.ONGOING"
+                    >
+                      <view class="bing-view-box hot">
+                        <view class="bing-countup-view">
+                          <view class="box-hot-view">
+                            <text
+                              class="box-status"
+                              :class="{
+                                active,
+                              }"
+                              >进行中，距离结束还剩</text
+                            >
+                          </view>
+                          <bing-countup
+                            color="#fff"
+                            splitorColor="#ea4730"
+                            backgroundColor="#ea4730"
+                            splitorMargin="4rpx"
+                            splitorFontSize="32rpx"
+                            :fontSize="15"
+                            :autoStart="true"
+                            :hour="data.value.hours"
+                            :minute="data.value.minutes"
+                            :second="data.value.seconds"
+                            @timeup="handleReload"
+                          />
+                        </view>
+                      </view>
+                    </template>
+                    <template v-else>
+                      <view class="bing-view-box">
+                        <text
+                          class="box-title"
+                          :class="{
+                            active,
+                          }"
+                          >{{ data.timeTitle }}</text
+                        >
+                        <text
+                          class="box-status"
+                          :class="{
+                            active,
+                          }"
+                          >{{ data.value.status }}</text
+                        >
+                      </view>
+                    </template>
+                  </view>
+                </template>
+              </z-tabs>
+            </view>
+          </view>
+        </view>
+      </template>
+
+      <cell>
+        <view class="raffle-view" :style="`height: ${pageHeight}px`">
+          <view class="raffle-view-bg"></view>
+          <swiper
+            class="swiper"
+            :current="current"
+            @change="swiperChange"
+            @transition="swiperTransition"
+            @animationfinish="swiperAnimationfinish"
+          >
+            <swiper-item
+              v-for="(item, index) in tabColumns"
+              :key="index"
+              class="swiper-item"
+            >
+              <sticky-swiper-item
+                :ref="(el) => (swiperItems[index] = el)"
+                path="list"
+                :tabIndex="index"
+                :currentIndex="current"
+                :showSlotTop="true"
+                :queryApi="queryApi"
+                :queryParams="queryParams"
+                :showLoadingMoreNoMore="false"
+              >
+                <template #default="{ data, end }">
+                  <view
+                    class="raffle-list-view"
+                    :class="{
+                      end: end,
+                    }"
+                  >
+                    <raffle-item
+                      :status="tabColumns[index].value.status"
+                      :timeTitle="tabColumns[index].timeTitle"
+                      :product="data"
+                      @on-buy="handleRaffleBuy"
+                      @on-good-detail="handleGoodDetail"
+                    />
+                  </view>
+                </template>
+              </sticky-swiper-item>
+            </swiper-item>
+          </swiper>
+        </view>
+      </cell>
+      <cell>
+        <view v-if="timeId" ref="bottomLineRef" class="bottom-tips">
+          <text class="tips-text"
+            >注：针对抽奖的游戏账号，不支持任何形式的退换、不享受包赔服务
+          </text>
+        </view>
+      </cell>
+    </z-paging>
+    <explain-popup :show="popupExplainShow" @close="popupExplainShow = false" />
+    <jdy-barrage ref="jdyBarrageRef" />
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { RaffleShowStatus } from "@/enums/raffle";
+import { getEventStatus } from "./js/utils";
+import { ref, reactive, computed, watch, nextTick } from "vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import RaffleItem from "./components/raffle-item.vue";
+import ExplainPopup from "./components/explain-popup.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import { useMainStore } from "@/stores/main";
+import {
+  getRaffleProduct,
+  getRaffleAddPurchase,
+  getRaffleActivityDetail,
+} from "@/api/raffle";
+import BingCountup from "@/components/bing-countup/index.vue";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import { activeStyle, barStyle } from "@/utils/operation-style";
+import { findIndex } from "lodash-es";
+import { GoodsPurchase } from "@/pages/order/js/purchase";
+import JdyBarrage from "@/components/jdy-barrage/jdy-barrage.vue";
+import Events, { report } from "@/utils/report/report";
+
+const tabsStyle = reactive({
+  width: "702rpx",
+  height: "130rpx",
+  display: "flex",
+  padding: "0",
+});
+const inactiveStyle = reactive({
+  color: "#606060",
+  fontSize: "28rpx",
+  fontWeight: "400",
+  padding: "0",
+  width: "550rpx",
+});
+const mainStore = useMainStore();
+const queryApi = ref(getRaffleProduct);
+const popupExplainShow = ref(false);
+const jdyBarrageRef = ref(null);
+const bottomLineRef = ref(null);
+const {
+  headerRef,
+  tabsRef,
+  pagePagingRef,
+  swiperItems,
+  pageHeight,
+  current,
+  tabsChange,
+  swiperAnimationfinish,
+  swiperTransition,
+  swiperChange,
+  getPageHeight,
+  onRefresh,
+  onReload,
+} = TabsSwiper();
+
+const tabColumns = ref([]);
+
+const timeId = ref(null);
+const queryParams = computed(() => {
+  return {
+    perPage: 20,
+    activityId: mainStore.homeRaffle?.activity_id,
+    timeId: timeId.value,
+  };
+});
+
+function createTimer() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      jdyBarrageRef.value.add({ item: "恭喜 昵称**  抽中游戏账号" });
+      resolve();
+    }, 5000);
+  });
+}
+
+async function triggerTimers() {
+  for (let i = 1; i <= 5; i++) {
+    await createTimer(i);
+  }
+}
+
+const dom = weex.requireModule("dom");
+const params = ref({});
+onLoad((param) => {
+  params.value = param;
+  updateTab();
+  nextTick(() => {
+    getPageHeight();
+    dom.getComponentRect(tabsRef.value, (option) => {
+      if (option && option.result) {
+        pageHeight.value = pageHeight.value - option.size.height;
+      }
+    });
+    jdyBarrageRef.value.add({ item: "恭喜 昵称**  抽中游戏账号" });
+    triggerTimers();
+  });
+});
+
+const updateTab = () => {
+  const { timeList, nowTimeId } = params.value;
+  const list = JSON.parse(timeList);
+  timeId.value = nowTimeId;
+  tabColumns.value = list.map((item) => {
+    const endTime = getEventStatus(item.startTime, item.endTime, "list");
+    return {
+      timeTitle: endTime.timeTitle,
+      value: endTime,
+      id: item.id,
+      startTime: item.startTime,
+      endTime: item.endTime,
+    };
+  });
+
+  const count = findIndex(tabColumns.value, (item) => item.id == nowTimeId);
+  current.value = count;
+};
+
+const handleReload = () => {
+  setTimeout(async () => {
+    const { nowTimeId, timeList } = await getRaffleActivityDetail(
+      mainStore.homeRaffle?.activity_id
+    );
+    params.value.nowTimeId = nowTimeId;
+    updateTab();
+    onReload();
+  }, 1100);
+};
+
+onShow(() => {
+  const { timeList, nowTimeId } = params.value;
+  const list = JSON.parse(timeList);
+  const count = findIndex(tabColumns.value, (item) => item.id == nowTimeId);
+  const endTime = getEventStatus(
+    tabColumns.value[count].startTime,
+    tabColumns.value[count].endTime,
+    "list"
+  );
+  tabColumns.value[count].value = endTime;
+  onReload();
+});
+
+// 设置子组件嵌套list父容器支持swiper-list吸顶滚动效果的方法
+const setListSpecialEffects = () => {
+  nextTick(() => {
+    swiperItems.value[current.value] &&
+      swiperItems.value[current.value].setSpecialEffects(0);
+  });
+};
+
+const handleRaffleBuy = (data) => {
+  report(Events.HOME_BONUS_DRAW);
+  getRaffleAddPurchase(data)
+    .then(() => {
+      uni.$main.toast("已参与，等待开奖");
+      onReload();
+    })
+    .catch((err) => {
+      uni.log.info(err, "handleRaffleBuy");
+      // onReload();
+    });
+};
+
+const showNextCountUp = computed(() => {
+  return (current, status) => {
+    const frontStatus = tabColumns.value[current - 1]?.value.status;
+    return (
+      [RaffleShowStatus.ENDED, RaffleShowStatus.ONGOING].includes(
+        frontStatus
+      ) && status == RaffleShowStatus.UPCOMING
+    );
+  };
+});
+
+const handleGoodDetail = (data) => {
+  const tabColumn = tabColumns.value[current.value];
+  uni.navigateTo({
+    url: `/pages/raffle/detail?timeTitle=${tabColumn.timeTitle}&id=${data.raffleNo}&status=${data.status}&startTime=${tabColumn.startTime}&endTime=${tabColumn.endTime}`,
+  });
+};
+
+const handleGoList = () => {
+  uni.navigateTo({
+    url: `/pages/raffle/list`,
+  });
+};
+
+watch(
+  () => current.value,
+  (newVal, oldVal) => {
+    timeId.value = tabColumns.value[newVal]?.id;
+    setListSpecialEffects();
+  },
+  { deep: true, implements: true }
+);
+</script>
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+
+:deep(.z-tabs-item) {
+  padding: 0 !important;
+}
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+}
+.hide {
+  height: 0;
+  width: 0;
+}
+
+.top-bg-view {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 0;
+  top: 600rpx;
+  flex: 1;
+  background-color: #fff;
+  height: 862.6rpx;
+  border-bottom-left-radius: 40rpx;
+  border-bottom-right-radius: 40rpx;
+}
+
+.right-content {
+  position: absolute;
+  right: 0;
+  top: 276rpx;
+  .cover {
+    width: 127rpx;
+    height: 37rpx;
+    margin: 7rpx 0;
+  }
+}
+.top-content {
+  padding: 0 24rpx;
+  margin-top: 335rpx;
+  height: 152rpx;
+  @include flex(column);
+  justify-content: flex-end;
+  .bg-view {
+    position: absolute;
+    left: 24rpx;
+    right: 24rpx;
+    bottom: 0;
+    top: -4rpx;
+    flex: 1;
+    height: 148rpx;
+  }
+  .tabs {
+    position: relative;
+    @include flex(column);
+    justify-content: flex-end;
+    .bing-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 200rpx;
+      width: 221rpx;
+      height: 120rpx;
+      position: relative;
+      padding-bottom: 10rpx;
+      .line {
+        position: absolute;
+        right: 0;
+        bottom: 26rpx;
+        width: 2rpx;
+        height: 40rpx;
+        background-color: #fff;
+        border-radius: 10rpx;
+      }
+      .active-bg {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0rpx;
+        flex: 1;
+        height: 104rpx;
+      }
+      .bing-view-box {
+        flex: 1;
+        @include flex(column);
+        align-items: center;
+        justify-content: flex-end;
+        .box-title {
+          font-weight: 400;
+          font-size: 28rpx;
+          color: #fff;
+          font-family: Barlow-Medium;
+          &.active {
+            font-weight: 600;
+            font-size: 28rpx;
+            color: #010101;
+            margin-bottom: 5rpx;
+            font-family: Barlow-SemiBold;
+            margin-top: -15rpx;
+          }
+        }
+        .box-status {
+          font-weight: 400;
+          font-size: 22rpx;
+          color: #ffffff;
+          margin: 6rpx 0;
+          &.active {
+            font-weight: bold;
+            font-size: 30rpx;
+            color: #ea4730;
+          }
+        }
+
+        &.hot {
+          align-items: flex-start;
+          justify-content: flex-start;
+          padding-top: 20rpx;
+          .box-hot-view {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+
+            .box-status {
+              font-weight: 400;
+              font-size: 18rpx;
+              color: #fff;
+              margin-bottom: 10rpx;
+              margin-top: 14rpx;
+              &.active {
+                color: #010101;
+              }
+            }
+          }
+        }
+      }
+      &.active {
+        width: 221rpx;
+      }
+    }
+  }
+}
+.tips {
+  font-weight: 400;
+  font-size: 24rpx;
+  color: #ffffff;
+  margin-left: 6rpx;
+}
+.bottom-tips {
+  /* flex: 1; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 50rpx;
+  padding: 0 48rpx;
+  .tips-text {
+    font-weight: 300;
+    font-size: 22rpx;
+    color: #8e8077;
+    line-height: 35rpx;
+  }
+}
+
+.raffle-view {
+  @include flex(column);
+  flex: 1;
+  padding: 0 24rpx;
+  overflow: hidden;
+  position: relative;
+  .raffle-view-bg {
+    background-color: #fff;
+    position: absolute;
+    right: 24rpx;
+    top: -4rpx;
+    left: 24rpx;
+    bottom: 0;
+    border-radius: 40rpx;
+  }
+  .raffle-list-view {
+    /* background-color: #fff; */
+    &.end {
+      border-bottom-left-radius: 40rpx;
+      border-bottom-right-radius: 40rpx;
+    }
+  }
+}
+.type-intro {
+  display: flex;
+  .intro-title {
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #1a1a1a;
+    margin-top: 24rpx;
+    margin-bottom: 8rpx;
+  }
+  .intro-text {
+    font-weight: 400;
+    font-size: 32rpx;
+    color: #606060;
+    line-height: 58rpx;
+  }
+}
+.popup-bg-view {
+  position: absolute;
+  flex: 1;
+  height: 250rpx;
+  top: 0;
+  right: 0;
+  left: 0;
+  background: linear-gradient(to bottom, #ecfefd, #fff);
+  border-top-right-radius: 16rpx;
+  border-top-left-radius: 16rpx;
+}
+.intro-btn {
+  flex: 1;
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $app-main-color;
+  border-radius: 12rpx;
+  margin-top: 20rpx;
+  .btn-text {
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #ffffff;
+  }
+}
+</style>

@@ -1,0 +1,261 @@
+@import "@/static/style/customicons.scss";
+
+
+.forms {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .submit-msg{
+    width: 702rpx;
+    @include flex(column);
+    margin-bottom: 30rpx;
+    line-height: 44rpx;
+    padding-bottom: 120rpx;
+    .text{
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #606060;
+      &.tips{
+        color: $app-main-color;
+      }
+    }
+  }
+}
+.valuation-tips{
+  flex: 1;
+  @include flex(row);
+  height: 72rpx;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFF7EB;
+  .tips{
+    width: 94rpx;
+    height: 44rpx;
+    margin-right: 12rpx;
+  }
+  .text{
+    font-weight: 400;
+    font-size: 24rpx;
+    color: #FF6A49;
+  }
+}
+.submit-btn-view {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  z-index: 1000;
+  box-shadow: 0rpx -8rpx 32rpx 0rpx rgba(0,0,0,0.06);
+  .submit-btn-operation {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding:24rpx;
+    // #ifndef APP-NVUE
+    box-sizing: border-box;
+    // #endif
+    .submit-btn{
+      flex: 1;
+      height: $app-max-btn-height;
+      background-color: $app-main-color;
+      border-radius:  $app-box-radius;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      .text{
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #FFFFFF;
+      }
+    }
+  }
+
+}
+.submit-box {
+  width: 300rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin: 30rpx 0;
+}
+.front-view{
+  @include flex(column);
+  align-items: center;
+  .steps {
+    @include flex(row);
+    align-items: center;
+    justify-content: center;
+    margin-top: 40rpx;
+    width: 702rpx;
+    .item {
+      @include flex(column);
+      align-items: center;
+      justify-content: center;
+      &.active {
+        .icon {
+          background-color: #1CC7BE;
+          .text {
+            color: #fff;
+          }
+        }
+        .text {
+          color: #000000;
+        }
+      }
+      .icon {
+        width: 64rpx;
+        height: 64rpx;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f4f5f6;
+        margin-bottom: 4rpx;
+        .text {
+          color: #afafaf;
+          font-size: 32rpx;
+          font-weight: 600;
+        }
+      }
+      .text {
+        font-size: 24rpx;
+        color: #afafaf;
+        font-weight: 500;
+      }
+    }
+    .line {
+      width: 64rpx;
+      height: 4rpx;
+      background-color: #f4f5f6;
+      border-radius: 1rpx;
+      margin: 0 20rpx;
+      margin-top: -30rpx;
+      &.active {
+        background-color: #1CC7BE;
+      }
+    }
+  }
+  .game-enter{
+    width: 702rpx;
+    background-color: #fff;
+    border-radius: 4rpx;
+    padding: 24rpx;
+    margin: 24rpx 0;
+    // #ifndef APP-NVUE
+    box-sizing: border-box;
+    // #endif
+    .title{
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #000;
+    }
+    .item{
+      @include flex(row);
+      justify-content: space-between;
+      margin-top: 16rpx;
+      .left{
+        @include flex(column);
+        align-items: center;
+        justify-content: center;
+        .text{
+          font-weight: 400;
+          font-size: 24rpx;
+          color: #1A1A1A;
+          margin-top: 8rpx
+        }
+      }
+      .right{
+        padding-top: 10rpx; 
+        @include flex(row);
+        align-items: center;
+        justify-content: center;
+
+        .text{
+          font-weight: 400;
+          font-size: 24rpx;
+          color: #AFAFAF;
+        }
+      }
+    }
+  }
+}
+.success-view{
+  // flex: 1;
+  @include flex(column);
+  // align-items: center;
+  overflow: hidden;
+  .view{
+    padding: 24rpx;
+    @include flex(column);
+    padding-top: 40rpx;
+    overflow: hidden;
+    .msg{
+      font-weight: 600;
+      font-size: 36rpx;
+      color: $app-main-color;
+      margin-bottom: 24rpx;
+    }
+    .intro{
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #1A1A1A;
+      margin-bottom: 24rpx;
+    }
+    .product{
+      font-weight: 400;
+      font-size: 32rpx;
+      color: #606060;
+      margin-bottom: 24rpx;
+    }
+    .success-box{
+      // padding: 24rpx;
+      @include flex(row);
+      // align-items: center;
+      justify-content: space-between;
+      .btn{
+        width: 314rpx;
+        height: 96rpx;
+        background-color: $app-main-color;
+        @include flex(row);
+        align-items: center;
+        justify-content: center;
+        border-radius:  $app-box-radius;
+        &.full{
+          width: 700rpx;
+        }
+        .text{
+          font-weight: 500;
+          font-size: 32rpx;
+          color: #FFFFFF;
+        }
+      }
+    }
+
+    &.valuation{
+      flex: 1;
+     .valuation-success{
+        width: 350rpx;
+        height: 300rpx;
+     }
+     .success-msg{
+      align-items: center
+     }
+     .success-box{
+      @include flex(column);
+      flex: 1;
+      position: fixed;
+      left:0;
+      right: 0;
+      bottom: 0;
+      padding: 24rpx;
+     }
+    }
+  }
+}
+

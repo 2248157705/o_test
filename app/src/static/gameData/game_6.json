@@ -1,0 +1,193 @@
+{
+  "gameFormItemParent": [],
+  "gameFormData": [
+    {
+      "type": "uploadImage",
+      "label": "商品详情图",
+      "parentId": 2,
+      "subLabel": "",
+      "name": "screenshot_info",
+      "value": [],
+      "desc": "",
+      "required": true,
+      "max": 10,
+      "multiple": true,
+      "flexColumn": true,
+      "errTips": "请上传商品详情图"
+    },
+
+    {
+      "type": "input",
+      "parentId": 2,
+      "label": "商品价格",
+      "errTips": "商品价格不能为空",
+      "placeholder": "请输入商品价格",
+      "name": "product_price",
+      "value": "",
+      "desc": "",
+      "inputType": "digit",
+
+      "required": true,
+      "rules": {
+        "rulesName": "rulePrice",
+        "ruleErrMsg": "价格应在20～999999元之间，最多保留两位小数"
+      }
+    },
+    {
+      "type": "textarea",
+      "parentId": 2,
+      "label": "商品描述",
+      "errTips": "商品价格不能为空",
+      "placeholder": "请输入商品商品描述",
+      "name": "product_desc",
+      "maxWord": 300,
+      "value": "",
+      "desc": "",
+      "inputType": "text",
+      "required": false
+    },
+    {
+      "type": "input",
+      "parentId": 2,
+      "label": "游戏账号",
+      "errTips": "游戏账号不能为空",
+      "placeholder": "请输入游戏账号",
+      "name": "product_account",
+      "value": "",
+      "desc": "",
+      "required": true
+    },
+    {
+      "type": "radio",
+      "parentId": 3,
+      "label": "按系统",
+      "required": true,
+      "name": "system",
+      "value": "",
+      "isTips": true,
+      "errTips": "请选择系统",
+      "options": [
+        {
+          "value": "安卓QQ",
+          "label": "安卓QQ"
+        },
+        {
+          "value": "安卓微信",
+          "label": "安卓微信"
+        },
+        {
+          "value": "苹果QQ",
+          "label": "苹果QQ"
+        },
+        {
+          "value": "苹果微信",
+          "label": "苹果微信"
+        },
+        {
+          "value": "安卓QQ抢先服",
+          "label": "安卓QQ抢先服"
+        },
+        {
+          "value": "安卓微信抢先服",
+          "label": "安卓微信抢先服"
+        }
+      ]
+    },
+    {
+      "type": "radio",
+      "parentId": 3,
+      "label": "实名情况",
+      "required": true,
+      "name": "real_name",
+      "value": "",
+      "errTips": "请选择实名情况",
+      "isTitle": true,
+      "options": [
+        {
+          "value": "不可二次实名",
+          "label": "不可二次实名"
+        },
+        {
+          "value": "可二次实名",
+          "label": "可二次实名"
+        },
+        {
+          "value": "支持人脸包赔",
+          "label": "支持人脸包赔"
+        }
+      ]
+    },
+    {
+      "type": "radio",
+      "parentId": 3,
+      "label": "有无防沉迷",
+      "required": true,
+      "name": "anti_addiction",
+      "value": "",
+      "isTitle": true,
+      "errTips": "请选择防沉迷",
+      "options": [
+        {
+          "value": "无防沉迷",
+          "label": "无防沉迷"
+        },
+        {
+          "value": "有防沉迷",
+          "label": "有防沉迷"
+        }
+      ]
+    },
+
+    {
+      "type": "input",
+      "parentId": 4,
+      "label": "联系人手机",
+      "errTips": "联系人手机不能为空",
+      "placeholder": "请输入联系人手机",
+      "name": "user_phone",
+      "max": 11,
+      "value": "",
+      "desc": "",
+      "inputType": "number",
+      "required": true,
+      "rules": {
+        "rulesName": "rulePhone",
+        "ruleErrMsg": "请输入正确手机号"
+      }
+    },
+    {
+      "type": "input",
+      "parentId": 4,
+      "label": "联系人QQ",
+      "errTips": "联系人QQ不能为空",
+      "placeholder": "请输入联系人QQ",
+      "name": "user_QQ",
+      "value": "",
+      "desc": "",
+      "inputType": "number",
+      "required": true
+    },
+    {
+      "type": "input",
+      "parentId": 4,
+      "label": "联系人微信号",
+      "errTips": "联系人微信号不能为空",
+      "placeholder": "请输入联系人微信号",
+      "name": "user_wechat",
+      "value": "",
+      "desc": "",
+      "required": true
+    },
+    {
+      "type": "text",
+      "parentId": 4,
+      "label": "交易保障合同",
+      "errTips": "交易保障合同不能为空",
+      "placeholder": "请选择交易保障合同",
+      "name": "user_contract",
+      "value": "默认交易时签署",
+      "desc": "",
+      "required": true
+    }
+  ]
+}

@@ -1,0 +1,538 @@
+<template>
+  <global-view
+    :showBar="false"
+    :showBgImage="true"
+    bgImage="/static/images/seckill/bg.png"
+  >
+    <template #bgImage>
+      <view class="bg-view">
+        <view class="bg-top"></view>
+      </view>
+    </template>
+    <z-paging
+      ref="pagePagingRef"
+      nvue-list-id="z-paging-nlist"
+      refresher-only
+      hide-nvue-bottom-tag
+      :enable-back-to-top="true"
+      :show-scrollbar="false"
+      @on-refresh="onRefresh"
+    >
+      <template #top>
+        <view ref="headerRef">
+          <u-navbar
+            bgColor="rgba(0,0,0,0)"
+            height="104rpx"
+            :placeholder="true"
+            :autoBack="true"
+            :safeAreaInsetTop="true"
+            @rightClick="handleExplain"
+          >
+            <template #left>
+              <view
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  align-items: flex-end;
+                  justify-content: center;
+                "
+              >
+                <view
+                  style="
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                  "
+                >
+                  <image
+                    style="width: 48rpx; height: 48rpx; margin-right: 12rpx"
+                    src="/static/images/common/icon_left_white.png"
+                  />
+                  <image
+                    style="width: 218rpx; height: 52rpx"
+                    src="/static/images/seckill/icon_navber_title.png"
+                  />
+                </view>
+                <text class="tips">知名游戏主播宠粉·低至1元</text>
+              </view>
+            </template>
+            <template #right>
+              <image
+                style="width: 48rpx; height: 48rpx"
+                src="/static/images/common/icon_help_white.png"
+              />
+            </template>
+          </u-navbar>
+          <view class="top-content">
+            <image
+              class="title"
+              src="/static/images/seckill/icon_title.png"
+            ></image>
+            <view class="tabs">
+              <z-tabs
+                ref="tabsRef"
+                bgColor="rgba(0,0,0,0)"
+                :list="tabColumns"
+                :current="current"
+                :inactiveStyle="inactiveStyle"
+                :tabsStyle="tabsStyle"
+                :activeStyle="activeStyle"
+                :barStyle="barStyle"
+                @change="tabsChange"
+              >
+                <template v-slot:content="{ data, active }">
+                  <view
+                    class="bing-view"
+                    :class="{
+                      active,
+                      ing: data.value.status == SeckillShowStatus.ONGOING,
+                    }"
+                  >
+                    <template
+                      v-if="data.value.status == SeckillShowStatus.ENDED"
+                    >
+                      <view class="bing-view-box">
+                        <text class="box-title">{{ data.timeTitle }}</text>
+                        <text class="box-status">{{ data.value.status }}</text>
+                      </view>
+                    </template>
+                    <template
+                      v-else-if="data.value.status == SeckillShowStatus.ONGOING"
+                    >
+                      <view class="bing-view-box hot">
+                        <view class="bing-countup-view">
+                          <bing-countup
+                            color="#fff"
+                            splitorColor="#F81640"
+                            backgroundColor="#F81640"
+                            :fontSize="16"
+                            :autoStart="true"
+                            :hour="data.value.hours"
+                            :minute="data.value.minutes"
+                            :second="data.value.seconds"
+                            @timeup="onRefresh"
+                          />
+                        </view>
+                        <view class="box-hot-view">
+                          <image
+                            class="box-hot"
+                            src="/static/images/seckill/icon_hot.png"
+                          />
+                          <text class="box-title">{{ data.timeTitle }}</text>
+                        </view>
+                      </view>
+                    </template>
+                    <template v-else>
+                      <view class="bing-view-box">
+                        <text class="box-title">{{ data.timeTitle }}</text>
+                        <text class="box-status">{{ data.value.status }}</text>
+                      </view>
+                    </template>
+                  </view>
+                </template>
+              </z-tabs>
+            </view>
+          </view>
+        </view>
+      </template>
+
+      <cell>
+        <view class="seckill-view" :style="`height: ${pageHeight}px`">
+          <swiper
+            class="swiper"
+            :current="current"
+            @change="swiperChange"
+            @transition="swiperTransition"
+            @animationfinish="swiperAnimationfinish"
+          >
+            <swiper-item
+              v-for="(item, index) in tabColumns"
+              :key="index"
+              class="swiper-item"
+            >
+              <sticky-swiper-item
+                path="list"
+                :ref="(el) => (swiperItems[index] = el)"
+                :tabIndex="index"
+                :currentIndex="current"
+                :showSlotTop="true"
+                :queryApi="queryApi"
+                :queryParams="queryParams"
+                :showLoadingMoreNoMore="false"
+              >
+                <template #loadingMoreNoMore>
+                  <view class="bottom-tips">
+                    <text class="tips-text"
+                      >注：针对限时抢购的游戏账号，请知悉并确认一经支付不支持任何形式的退换货</text
+                    >
+                    <bottom-line />
+                  </view>
+                </template>
+                <template v-slot:default="{ data }">
+                  <view class="seckill-list-view">
+                    <seckill-item
+                      :status="tabColumns[index].value.status"
+                      :product="data"
+                      @handleBuy="handleSeckillBuy"
+                    />
+                  </view>
+                </template>
+              </sticky-swiper-item>
+            </swiper-item>
+          </swiper>
+        </view>
+      </cell>
+    </z-paging>
+    <popup-explain ref="popupExplainRef" title="活动说明">
+      <template #bgView>
+        <view class="popup-bg-view"></view>
+      </template>
+
+      <scroll-view
+        style="height: 550rpx"
+        scroll-y="true"
+        class="scroll-Y"
+        :show-scrollbar="false"
+      >
+        <view class="type-intro">
+          <n-text :text="nTextList"></n-text>
+          <!-- <text class="intro-title">官方寄售</text>
+          <text class="intro-text"
+            >1、卖家发布商品，经官方审核合格即上架；</text
+          >
+          <text class="intro-text"
+            >2、商品上架后，列入列表展示，广泛对接买家；</text
+          >
+          <text class="intro-text"
+            >3、买家确认付款，系统自动建群，交易流程随即启动。</text
+          > -->
+        </view>
+        <view class="type-intro">
+          <!-- <text class="intro-title">中介担保</text>
+          <text class="intro-text">1、双方协商价格，核对账号信息； </text>
+          <text class="intro-text">2、联系客服，即刻组建专属交易群； </text>
+          <text class="intro-text">3、一站式中介担保，覆盖所有游戏账号。</text> -->
+        </view>
+      </scroll-view>
+
+      <view class="intro-btn" @tap="closeExplain">
+        <text class="btn-text">我知道了</text>
+      </view>
+    </popup-explain>
+  </global-view>
+</template>
+
+<script setup>
+import { SeckillShowStatus } from "@/enums/seckill";
+import { getEventStatus } from "./js/utils";
+import { ref, reactive, computed, watch, nextTick } from "vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import SeckillItem from "./components/seckill-item.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import { useMainStore } from "@/stores/main";
+import {
+  getSeckillActivityDetail,
+  getSeckillProduct,
+  getSeckillOrderId,
+} from "@/api/seckill";
+import BingCountup from "@/components/bing-countup/index.vue";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import { activeStyle, barStyle } from "@/utils/operation-style";
+import { findIndex, isEmpty } from "lodash-es";
+import { GoodsPurchase } from "@/pages/order/js/purchase";
+import BottomLine from "@/components/bottom-line/index.vue";
+import PopupExplain from "@/components/my-popup/index.vue";
+import nText from "@/components/n-text/n-text.vue";
+
+const text = [
+  "1、场次随后台配置动态调整，按时间排序从左到右排，滑动浏览，",
+  "默认在当前或最近开始场次；若都结束的话就默认在最近结束的",
+];
+
+const nTextList = ref([]);
+
+const { fetchPurchasePayment, checkH5PayStatus } = GoodsPurchase();
+const tabsStyle = reactive({
+  width: "702rpx",
+  height: "120rpx",
+  display: "flex",
+});
+const inactiveStyle = reactive({
+  color: "#606060",
+  fontSize: "28rpx",
+  fontWeight: "400",
+  padding: "0",
+});
+const mainStore = useMainStore();
+const queryApi = ref(getSeckillProduct);
+const popupExplainRef = ref(null);
+
+const {
+  headerRef,
+  tabsRef,
+  pagePagingRef,
+  swiperItems,
+  pageHeight,
+  current,
+  tabsChange,
+  swiperAnimationfinish,
+  swiperTransition,
+  swiperChange,
+  getPageHeight,
+  onRefresh,
+  onReload,
+} = TabsSwiper();
+
+const searchBtnStyle = reactive({
+  backgroundColor: "#FD5C46",
+  height: "56rpx",
+  top: "10rpx",
+  right: "10rpx",
+});
+const tabColumns = ref([]);
+
+const timeId = ref(null);
+const queryParams = computed(() => {
+  return {
+    perPage: 20,
+    activityId: mainStore.homeSeckill?.activity_id,
+    timeId: timeId.value,
+  };
+});
+
+onLoad(async () => {
+  const { timeList, nowTimeId } = await getSeckillActivityDetail(
+    mainStore.homeSeckill?.activity_id
+  );
+  timeId.value = nowTimeId;
+  tabColumns.value = timeList.map((item) => {
+    const endTime = getEventStatus(item.startTime, item.endTime);
+    return {
+      timeTitle: item.timeTitle,
+      value: endTime,
+      id: item.id,
+    };
+  });
+  const count = findIndex(tabColumns.value, (item) => item.id == nowTimeId);
+  // for (const i in text) {
+  //   const item = text[i];
+  //   nTextList.value.push({
+  //     text: item,
+  //     style: i == 1 ? { color: "#f00" } : { color: "#fff" },
+  //   });
+  // }
+
+  nextTick(() => {
+    current.value = count;
+    getPageHeight();
+  });
+});
+
+onShow(() => {
+  onReload();
+  checkH5PayStatus();
+});
+
+// 设置子组件嵌套list父容器支持swiper-list吸顶滚动效果的方法
+const setListSpecialEffects = () => {
+  nextTick(() => {
+    swiperItems.value[current.value] &&
+      swiperItems.value[current.value].setSpecialEffects(0);
+  });
+};
+
+const handleSeckillBuy = (data) => {
+  getSeckillOrderId(data)
+    .then(({ addPurchaseResp }) => {
+      fetchPurchasePayment(addPurchaseResp.orderId);
+      // onReload();
+    })
+    .catch((err) => {
+      uni.log.info(err, "SeckillBuy");
+      // onReload();
+    });
+};
+
+const handleExplain = () => {
+  // popupExplainRef.value.open();
+};
+const closeExplain = () => {
+  popupExplainRef.value.close();
+};
+
+watch(
+  () => current.value,
+  () => {
+    timeId.value = tabColumns.value[current.value]?.id;
+    setListSpecialEffects();
+  },
+  { deep: true }
+);
+</script>
+
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+}
+.tabs {
+  background-color: #f8f8f8;
+  padding: 12rpx;
+  margin-top: 24rpx;
+  border-radius: 200rpx;
+  .bing-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 200rpx;
+    width: 202rpx;
+    height: 120rpx;
+    &.ing {
+      width: 212rpx;
+    }
+
+    &-box {
+      flex: 1;
+      @include flex(column);
+      align-items: center;
+      justify-content: center;
+      .box-title {
+        font-weight: 600;
+        font-size: 32rpx;
+        color: #1a1a1a;
+        font-family: Barlow-SemiBold;
+      }
+      .box-status {
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #606060;
+        margin-top: 8rpx;
+      }
+      &.hot {
+        .box-hot-view {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          .box-hot {
+            width: 34rpx;
+            height: 34rpx;
+          }
+          .box-title {
+            color: #f81640;
+          }
+        }
+        .bing-countup-view {
+          margin-top: 20rpx;
+        }
+      }
+    }
+    &.active {
+      background-color: #fff;
+      width: 252rpx;
+    }
+  }
+}
+.bg-view {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 248rpx;
+  background-color: #fff;
+  border-top-left-radius: 24rpx;
+  border-top-right-radius: 24rpx;
+  flex: 1;
+  .bg-top {
+    height: 100rpx;
+    border-top-left-radius: 24rpx;
+    border-top-right-radius: 24rpx;
+    background: linear-gradient(to bottom, #ffe8d7, #ffffff);
+  }
+}
+.top-content {
+  @include flex(column);
+  flex: 1;
+  padding: 0 24rpx;
+  align-items: center;
+  justify-content: center;
+  .title {
+    width: 532rpx;
+    height: 100rpx;
+    margin-top: 10rpx;
+  }
+}
+.tips {
+  font-weight: 400;
+  font-size: 24rpx;
+  color: #ffffff;
+  margin-left: 6rpx;
+}
+.seckill-view {
+  @include flex(column);
+  flex: 1;
+  padding: 24rpx;
+  .seckill-list-view {
+    border-radius: 12rpx;
+    margin-top: 16rpx;
+  }
+  .bottom-tips {
+    /* flex: 1; */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15rpx;
+    .tips-text {
+      font-weight: 400;
+      font-size: 18rpx;
+      color: #afafaf;
+    }
+  }
+}
+
+.type-intro {
+  display: flex;
+  .intro-title {
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #1a1a1a;
+    margin-top: 24rpx;
+    margin-bottom: 8rpx;
+  }
+  .intro-text {
+    font-weight: 400;
+    font-size: 32rpx;
+    color: #606060;
+    line-height: 58rpx;
+  }
+}
+.popup-bg-view {
+  position: absolute;
+  flex: 1;
+  height: 250rpx;
+  top: 0;
+  right: 0;
+  left: 0;
+  background: linear-gradient(to bottom, #ecfefd, #fff);
+  border-top-right-radius: 16rpx;
+  border-top-left-radius: 16rpx;
+}
+.intro-btn {
+  flex: 1;
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $app-main-color;
+  border-radius: 12rpx;
+  margin-top: 20rpx;
+  .btn-text {
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #ffffff;
+  }
+}
+</style>

@@ -1,0 +1,211 @@
+<template>
+  <global-view bgImage="/static/images/common/global_bg@x2.png">
+    <view class="account-container">
+      <view class="account line-gap">
+        <view class="login-box">
+          <u-avatar
+            :src="
+              userStore.userInfo?.avatar || '/static/images/my/icon_avatar.png'
+            "
+            size="96rpx"
+            mode="aspectFill"
+          />
+          <view v-if="userStore.userInfo" class="account-msg">
+            <u--text
+              :lines="1"
+              :bold="true"
+              size="40rpx"
+              :text="userStore.userInfo?.nickname || '这家伙很懒'"
+            ></u--text>
+            <text class="last-child">ID:{{ userStore.userInfo?.account }}</text>
+          </view>
+          <view v-else class="account-msg" @click="toLogin()">
+            <text class="first-child">登录/注册</text>
+            <text class="last-child">登录后享受更多服务～</text>
+          </view>
+        </view>
+        <view class="setting" @click.stop="navigateToSettings">
+          <u--image
+            width="58rpx"
+            height="58rpx"
+            src="/static/images/my/icon_settings.png"
+          />
+        </view>
+      </view>
+
+      <account-contract v-if="false" class="line-gap" />
+
+
+      <account-category
+          class="line-gap"
+          :list="buyList"
+          title="我买到的"
+          value="去购买"
+          url="/pages/audit/appstore/home"
+          @change="handleBuyAccountChange"
+      />
+
+      <account-settings />
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { onShow } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import AccountContract from "@/components/account-contract/index.vue";
+import AccountSettings from "./components/account-settings.vue";
+import AccountCategory from "./components/account-category.vue";
+import { useUserStore } from "@/stores/user";
+import { toLogin } from "@/utils/login";
+import {ref} from "vue";
+import {OrderEvents} from "./orderEnum.ts";
+
+
+const userStore = useUserStore();
+
+const buyList = ref([
+  {
+    tabIndex: 1,
+    title: "待付款",
+    icon: "pay",
+  },
+  {
+    tabIndex: 2,
+    title: "待发货",
+    icon: "transaction",
+  },
+  {
+    tabIndex: 3,
+    title: "已成交",
+    icon: "sold",
+  },
+  {
+    tabIndex: -1,
+    title: "我的砍价",
+    icon: "received_bid",
+  },
+  {
+    tabIndex: 0,
+    title: "全部订单",
+    icon: "product_management",
+  },
+]);
+
+// 设置
+const navigateToSettings = () => {
+  uni.navigateTo({
+    url: "/pages/my/settings-center/index",
+  });
+};
+// 我买到的
+const handleBuyAccountChange = ({ tabIndex }) => {
+  if(tabIndex === -1){
+    uni.navigateTo({
+      url: `/pages/audit/appstore/bargain?bidder=buyer`,
+    });
+  }else {
+
+    uni.$emit(OrderEvents.REFRESH_PAGE,{status:tabIndex})
+    uni.switchTab({
+      url: `/pages/audit/appstore/order?status=${tabIndex}`,
+    });
+  }
+};
+
+onShow(() => {
+  uni.log.info("进入");
+  userStore.init();
+});
+</script>
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+.account-container {
+  // display: flex;
+  // flex-direction: column;
+  // flex: 1;
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+
+  .line-gap {
+    margin-bottom: 16rpx;
+  }
+  .account-msg {
+    margin-left: 20rpx;
+  }
+  .wallet-box {
+    background: linear-gradient(to bottom, #f5fffe, #ffffff);
+    padding: 24rpx;
+    @include flex(row);
+    align-items: center;
+    justify-content: space-between;
+    .icon-box {
+      @include flex(row);
+      align-items: center;
+      justify-content: center;
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .text {
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #1a1a1a;
+        margin-left: 16rpx;
+      }
+    }
+    .num-box {
+      @include flex(row);
+      align-items: center;
+      justify-content: center;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: $app-main-color;
+      }
+    }
+  }
+  .account {
+    height: 160rpx;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    .login-box {
+      @include flex;
+      align-items: center;
+      justify-content: center;
+    }
+    &-avatar {
+      margin-right: 20rpx;
+    }
+    &-msg {
+      flex: 1;
+      .first-child {
+        font-weight: 600;
+        font-size: 40rpx;
+        color: rgba(0, 0, 0, 0.84);
+        line-height: 48rpx;
+        font-style: normal;
+      }
+      .last-child {
+        font-size: 32rpx;
+        margin-top: 8rpx;
+
+        font-family:
+          PingFang SC,
+          PingFang SC;
+        font-weight: 400;
+        font-size: 24rpx;
+        color: #606060;
+        line-height: 28rpx;
+        font-style: normal;
+      }
+    }
+  }
+  .setting {
+    height: 80rpx;
+  }
+}
+</style>

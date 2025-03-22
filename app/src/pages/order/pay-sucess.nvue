@@ -1,0 +1,95 @@
+<template>
+  <global-view bgColor="linear-gradient(to bottom, #ffffff, #FAFBFE)">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="支付通知"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="view-container">
+      <view class="success-view">
+        <view class="view">
+          <u--image
+            width="240rpx"
+            height="240rpx"
+            src="/static/images/sell/icon_success.png"
+          />
+          <text class="msg">支付成功</text>
+          <text class="intro">点击下方按钮进入群聊，等待卖家进行交易</text>
+          <view class="success-box">
+            <!-- <view class="btn full" @click="toJoinIM">
+              <template v-if="tidData.loading">
+                <u-loading-icon
+                  :vertical="true"
+                  :show="true"
+                  color="#fff"
+                ></u-loading-icon>
+                <text class="text">正在进入...</text>
+              </template>
+              <text v-else class="text">进入群聊</text>
+            </view> -->
+            <view class="btn full" @click="handleIM">
+              <im-button
+                radius="2"
+                height="86"
+                text="进入群聊"
+                :params="{ order_id: detailData.orderId }"
+                :open-type="openType"
+                type="primary"
+              />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import { GoodsOrder } from "@/pages/order/js/order";
+import { ref } from "vue";
+import { OpenType } from "@/enums/button";
+import Events, { report } from "@/utils/report/report";
+import ImButton from "@/components/my-button/my-button.vue";
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { detailData, tidData, fetchAfterSaleTidByOrderId } = GoodsOrder();
+const openType = ref("");
+onLoad((options) => {
+  if (options.orderId) {
+    openType.value =
+      options.type && options.type !== "undefined"
+        ? options.type
+        : OpenType.NORMAL;
+    detailData.orderId = options.orderId;
+  }
+});
+
+const handleIM = () => {
+  report(Events.ORDER_ENTER_CHAT, {
+    order_id: detailData.orderId,
+  });
+};
+
+// const toJoinIM = async () => {
+//   await fetchAfterSaleTidByOrderId(detailData.orderId);
+// };
+</script>
+
+<style lang="scss" scoped>
+@import "@/pages/sell-account/sell-information-enter/index.scss";
+
+.view-container {
+  margin-top: 44rpx;
+  .view {
+    @include flex(column);
+    align-items: center;
+    justify-content: center;
+  }
+}
+</style>

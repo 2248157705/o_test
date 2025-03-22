@@ -1,0 +1,322 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <z-paging
+      ref="pagePagingRef"
+      nvue-list-id="z-paging-nlist"
+      refresher-only
+      hide-nvue-bottom-tag
+      @on-refresh="onRefresh"
+    >
+      <!-- 这个cell包含了吸顶view和主体列表，其高度必须等于页面可见高度 -->
+      <template #top>
+        <view ref="headerRef">
+          <u-navbar
+            bgColor="#ffffff"
+            title="抽奖记录"
+            :placeholder="true"
+            :autoBack="true"
+            :safeAreaInsetTop="true"
+          />
+          <view class="view-container">
+            <view class="tabs">
+              <z-tabs
+                ref="tabsRef"
+                barWidth="56rpx"
+                barHeight="8rpx"
+                :list="tabColumns"
+                :current="current"
+                :inactiveStyle="inactiveStyle"
+                :tabsStyle="tabsStyle"
+                :activeStyle="activeStyle"
+                :barStyle="barStyle"
+                @change="tabsChange"
+              />
+            </view>
+          </view>
+        </view>
+      </template>
+      <!-- 吸顶view -->
+      <cell>
+        <view class="paging-content" :style="'height:' + pageHeight + 'px'">
+          <!-- 吸顶view -->
+          <!-- 注意！此处的z-tabs为独立的组件，可替换为第三方的tabs，若需要使用z-tabs，请在插件市场搜索z-tabs并引入，否则会报插件找不到的错误 -->
+
+          <!-- swiper -->
+          <swiper
+            class="swiper"
+            :current="current"
+            @change="swiperChange"
+            @transition="swiperTransition"
+            @animationfinish="swiperAnimationfinish"
+          >
+            <swiper-item
+              v-for="(item, index) in tabColumns"
+              :key="index"
+              class="swiper-item"
+            >
+              <sticky-swiper-item
+                path="list"
+                v-slot="{ data }"
+                :ref="(el) => (swiperItems[index] = el)"
+                :tabIndex="index"
+                :currentIndex="current"
+                :queryApi="queryApi"
+                :queryParams="queryParams"
+                :showEmptyReload="true"
+                @onEmptyReloadClick="handleEmptyReloadClick"
+                emptyReloadText="去抽奖"
+              >
+                <view class="goods-content">
+                  <view class="cover">
+                    <image
+                      class="image"
+                      mode="aspectFill"
+                      :src="
+                        data.raffleProductDetail?.origProductDetail
+                          ?.productCovert
+                      "
+                    />
+                  </view>
+                  <view class="product-msg">
+                    <view class="title">
+                      <u--text
+                        :lines="2"
+                        lineHeight="18"
+                        size="12"
+                        color="#1A1A1A"
+                        :prefixImageStyle="{ width: '102rpx', height: '44rpx' }"
+                        :bold="true"
+                        :text="
+                          data.raffleProductDetail?.origProductDetail
+                            .productTitle
+                        "
+                      ></u--text>
+                    </view>
+                    <text class="price">
+                      ¥{{
+                        data.raffleProductDetail?.origProductDetail
+                          ?.productPrice
+                      }}
+                    </text>
+                    <view
+                      class="status"
+                      @tap="
+                        handleBuy(
+                          data.winStatus,
+                          data.raffleProductDetail?.origProductDetail?.productId
+                        )
+                      "
+                    >
+                      <image
+                        class="price-bg"
+                        :src="`/static/images/raffle/raffle_item_${data.winStatus}.png`"
+                      />
+                    </view>
+                  </view>
+                </view>
+              </sticky-swiper-item>
+            </swiper-item>
+          </swiper>
+        </view>
+      </cell>
+    </z-paging>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, watch, reactive, computed, nextTick } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import Search from "@/components/search/index.vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import GoodsItem from "@/components/goods-item/index.vue";
+import DelistPopup from "@/components/my-popup/index.vue";
+import PutPopup from "@/pages/goods/components/put-popup.vue";
+import { getRaffleOrderPageList } from "@/api/raffle";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import { throttle } from "lodash-es";
+import { RaffleProductStatus } from "@/enums/raffle";
+import {
+  tabsStyle,
+  inactiveStyle,
+  activeStyle,
+  barStyle,
+} from "@/utils/operation-style";
+import { toCamelCase } from "@/utils";
+
+const queryApi = ref(getRaffleOrderPageList);
+
+const currentProduct = ref(null);
+const tabColumns = ref([
+  { name: "待开奖", value: [RaffleProductStatus.ING] },
+  { name: "已结束", value: [RaffleProductStatus.NO, RaffleProductStatus.YES] },
+]);
+
+const {
+  headerRef,
+  tabsRef,
+  pagePagingRef,
+  swiperItems,
+  pageHeight,
+  current,
+  tabsChange,
+  swiperAnimationfinish,
+  swiperTransition,
+  swiperChange,
+  getPageHeight,
+  onRefresh,
+  onReload,
+} = TabsSwiper();
+
+const queryParams = computed(() => {
+  return {
+    perPage: 20,
+    winStatusList: tabColumns.value[current.value]?.value,
+  };
+});
+
+const handleEmptyReloadClick = (e) => {
+  // 禁止默认事件，默认刷新列表
+  e(false);
+  uni.navigateBack();
+};
+
+onLoad((options) => {
+  current.value = +options.status || 0;
+  nextTick(() => {
+    getPageHeight();
+  });
+});
+
+const handleBuy = (status, productId) => {
+  if (status == RaffleProductStatus.ING) {
+    uni.$main.toast("已参与，等待开奖");
+    return;
+  }
+
+  if (status == RaffleProductStatus.NO) {
+    uni.$main.toast("很遗憾，未中奖");
+    return;
+  }
+  if (status == RaffleProductStatus.YES) {
+    uni.$main.toast("联系客服领奖，若已领取，请忽略");
+  }
+};
+
+// 设置子组件嵌套list父容器支持swiper-list吸顶滚动效果的方法
+const setListSpecialEffects = () => {
+  nextTick(() => {
+    swiperItems.value[current.value].setSpecialEffects(0);
+  });
+};
+
+watch(
+  () => current.value,
+  () => {
+    setListSpecialEffects();
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => tabColumns.value,
+  () => {
+    onReload();
+  },
+  { immediate: true }
+);
+</script>
+
+<style lang="scss" scoped>
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+}
+.paging-content {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  padding: 0 24rpx;
+}
+.goods-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
+  border-radius: $app-box-radius;
+  padding: 16rpx;
+  margin-top: $app-box-margin-top;
+  display: flex;
+  flex-direction: row;
+  .cover {
+    width: 320rpx;
+    height: 240rpx;
+    margin-right: 16rpx;
+    .image {
+      width: 320rpx;
+      height: 240rpx;
+      border-radius: 8rpx;
+    }
+  }
+  .product-msg {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    .title {
+      margin-bottom: 6rpx;
+      height: 75rpx;
+    }
+    .price {
+      font-family: Barlow-ExtraBold;
+      font-weight: bold;
+      font-size: 48rpx;
+      color: #ff3624;
+      margin: 12rpx 0;
+      text-decoration: line-through;
+    }
+    .status {
+      width: 334rpx;
+      height: 82rpx;
+      .price-bg {
+        width: 334rpx;
+        height: 82rpx;
+      }
+    }
+  }
+}
+
+.view-container {
+  @include flex(column);
+  background-color: #fff;
+  justify-content: center;
+  flex: 1;
+  padding: 0 24rpx;
+
+  .tab-right {
+    width: 60rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    &.active {
+      transform: rotate(180deg);
+    }
+  }
+  .tabs {
+    flex: 1;
+    background-color: #fff;
+  }
+  .dropdown {
+    flex: 1;
+    justify-content: center;
+    // #ifndef APP-NVUE
+    box-sizing: border-box;
+    // #endif
+    display: flex;
+    flex-direction: row;
+    z-index: 9999;
+    background-color: #fff;
+  }
+}
+</style>
