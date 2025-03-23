@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>HBuilder.ipa</key>
+	<array>
+		<dict>
+			<key>architectures</key>
+			<array>
+				<string>arm64</string>
+			</array>
+			<key>buildNumber</key>
+			<string>113</string>
+			<key>certificate</key>
+			<dict>
+				<key>SHA1</key>
+				<string>E947A1DABD3C4C1532F5D35F780027FBA1B710B3</string>
+				<key>dateExpires</key>
+				<string>2025/6/14</string>
+				<key>type</key>
+				<string>Apple Distribution</string>
+			</dict>
+			<key>entitlements</key>
+			<dict>
+				<key>application-identifier</key>
+				<string>PBL4254D6S.vip.taogehao</string>
+				<key>beta-reports-active</key>
+				<true/>
+				<key>com.apple.developer.team-identifier</key>
+				<string>PBL4254D6S</string>
+				<key>get-task-allow</key>
+				<false/>
+			</dict>
+			<key>name</key>
+			<string>HBuilder.app</string>
+			<key>profile</key>
+			<dict>
+				<key>UUID</key>
+				<string>42983a52-4272-4427-bed6-a58acd57db7a</string>
+				<key>dateExpires</key>
+				<string>2025/6/14</string>
+				<key>name</key>
+				<string>dis</string>
+			</dict>
+			<key>symbols</key>
+			<true/>
+			<key>team</key>
+			<dict>
+				<key>id</key>
+				<string>PBL4254D6S</string>
+				<key>name</key>
+				<string>Guangxi parallel time and SpaceTechnology Co., Ltd.</string>
+			</dict>
+			<key>versionNumber</key>
+			<string>1.0.13</string>
+		</dict>
+	</array>
+</dict>
+</plist>
