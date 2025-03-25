@@ -1,0 +1,147 @@
+def DEPLOY_DIR = ''
+
+pipeline {
+    agent { label 'gamehub-testserver' }
+
+    options { 
+        timestamps()
+        disableRestartFromStage()
+        disableConcurrentBuilds() 
+        disableResume()
+        buildDiscarder(logRotator(artifactDaysToKeepStr: '180', daysToKeepStr: '180'))
+    }
+
+    environment {
+        // gitlab地址
+        GIT_REPOSITORY = 'ssh://git@gitlab.shanghaierba.com:8022/gamehub/h5-client.git'
+        // gitlab部署密钥credentialsId
+        GITLAB_DEPLOY_KEY_ID = 'gamehub-deploy-key'
+        // 在 jenkins 系统管理添加机器人得到的 id, jenkins 需要安装 DingTalk
+        DINGTALK_ROBOT_ID = 'gamehub-dingtalk-php'
+        // 通知消息标题
+        MESSAGE_TITLE = 'gamehub-淘个号h5页'
+    }
+
+    parameters {
+        booleanParam(name: 'Refresh',
+                    defaultValue: false,
+                    description: '是否只更新Jenkins流水线配置, 不更新代码')
+        choice(name: 'DEPLOY_ENV', choices: ['测试', '预发布', '生产'], description: '请选择部署环境')
+    }
+
+    stages {
+        stage('Read Jenkinsfile') {
+            when {
+                expression { return params.Refresh == true }
+            }
+            steps {
+                echo("更新Jenkins流水线配置完成")
+            }
+        }
+       stage('Run Jenkinsfile') {
+            when {
+                expression { return params.Refresh == false }
+            }
+            stages {
+                stage('Clone') {
+                    steps {
+                        echo '克隆git仓库'
+                        git branch: "${BRANCH_NAME}", credentialsId: "${GITLAB_DEPLOY_KEY_ID}", url: "$GIT_REPOSITORY"
+                    }
+                }
+                stage('Build'){
+                    steps {
+                        echo '打包'
+                        nodejs(nodeJSInstallationName: 'Node v21', configId: 'nodejs-aliyun-registry') {
+                            sh 'npm config set registry https://registry.npmmirror.com'
+                            sh 'npm i -S'
+                            script {
+                                switch(params.DEPLOY_ENV) {
+                                    case "测试":
+                                        DEPLOY_DIR = '/nas/gamehub/test/static/h5-client/'
+                                        sh 'npm run build:test'
+                                    break
+                                    case "预发布":
+                                        DEPLOY_DIR = '/nas/gamehub/staging/static/h5-client/'
+                                        sh 'npm run build:pre'
+                                    break
+                                    case "生产":
+                                        DEPLOY_DIR = '/nas/gamehub/prod/static/h5-client/'
+                                        sh 'npm run build'
+                                    break
+                                    default:
+                                        error "无效部署环境"
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Deploy'){
+                    steps {
+                        echo '同步文件到文件共享服务器'
+                        script {
+                            sh 'rsync -rltDv --delete --exclude="robots.txt" ./dist/build/h5/ ' + "$DEPLOY_DIR"
+                        }
+                    }
+                }
+            }
+       }
+    }
+    post {
+        always {
+            cleanWs(deleteDirs: true, patterns: [
+                [pattern: 'dist', type: 'INCLUDE']
+            ])
+        }
+        success {
+            // jenkins 需要安装 DingTalk
+            dingtalk (
+                robot: "$DINGTALK_ROBOT_ID",
+                type: 'MARKDOWN',
+                title: "$MESSAGE_TITLE",
+                text: [
+                    "**${MESSAGE_TITLE}**  ",
+                    "任务ID: **${BUILD_NUMBER}**  ",
+                    "分支: **${BRANCH_NAME}**  ",
+                    "环境: **${DEPLOY_ENV}**  ",
+                    '状态: <font color="#33CC00">成功</font>  ',
+                    "**[查看任务](${BUILD_URL})**",
+                    "**[查看详情](${RUN_DISPLAY_URL})**",
+                ]
+            )
+        }
+        failure {
+            dingtalk (
+                robot: "$DINGTALK_ROBOT_ID",
+                type: 'MARKDOWN',
+                title: "$MESSAGE_TITLE",
+                text: [
+                    "**${MESSAGE_TITLE}**  ",
+                    "任务ID: **${BUILD_NUMBER}**  ",
+                    "分支: **${BRANCH_NAME}**  ",
+                    "环境: **${DEPLOY_ENV}**  ",
+                    '状态: <font color="#FF3333">失败</font>  ',
+                    "**[查看任务](${BUILD_URL})**",
+                    "**[查看详情](${RUN_DISPLAY_URL})**",
+                ]
+            )
+        }
+        aborted {
+            dingtalk (
+                robot: "$DINGTALK_ROBOT_ID",
+                type: 'MARKDOWN',
+                title: "$MESSAGE_TITLE",
+                text: [
+                    "**${MESSAGE_TITLE}**  ",
+                    "任务ID: **${BUILD_NUMBER}**  ",
+                    "分支: **${BRANCH_NAME}**  ",
+                    "环境: **${DEPLOY_ENV}**  ",
+                    '状态: <font color="#FF3333">超时或取消</font>  ',
+                    "**[查看任务](${BUILD_URL})**",
+                    "**[查看详情](${RUN_DISPLAY_URL})**",
+                ]
+            )
+        }
+    }
+}

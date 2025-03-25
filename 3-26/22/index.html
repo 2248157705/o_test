@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="apple-mobile-web-app-title" content="淘个号" />
+  <meta name="og:type" content="淘个号" />
+  <meta name="og:title" content="淘个号" />
+  <meta name="og:site_name" content="淘个号" />
+  <meta name="full-screen" content="yes" />
+  <meta name="x5-fullscreen" content="" />
+  <meta name="description" content="" />
+  <meta name="format-detection" content="telephone=yes" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="viewport"
+    content="initial-scale=1,maximum-scale=1,user-scalable=no,width=device-width,viewport-fit=cover" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon.png" />
+  <script>
+    var coverSupport =
+      "CSS" in window &&
+      typeof CSS.supports === "function" &&
+      (CSS.supports("top: env(a)") || CSS.supports("top: constant(a)"));
+    document.write(
+      '<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' +
+      (coverSupport ? ", viewport-fit=cover" : "") +
+      '" />'
+    );
+  </script>
+
+  <title>淘个号</title>
+  <!--preload-links-->
+  <!--app-context-->
+</head>
+
+<body>
+  <div id="app"><!--app-html--></div>
+  <script type="module" src="/src/main.js"></script>
+  <script defer src="https://static-gamehub-client.sh28.vip/taogehao/js/uni.webview.1.5.6.1.js"></script>
+  <% if (ENABLE_ERUDA==="true" ) { %>
+    <script src="https://static-gamehub-client.sh28.vip/taogehao/js/eruda.js"></script>
+    <script>
+      // eruda.init();
+    </script>
+    <% } %>
+</body>
+
+</html>
