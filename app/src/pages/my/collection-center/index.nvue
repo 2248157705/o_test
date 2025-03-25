@@ -1,0 +1,308 @@
+<!-- 自定义导航栏演示 -->
+<!--  此demo使用了uView的Navbar 自定义导航栏 https://uviewui.com/components/navbar.html -->
+<template>
+  <global-view :showBar="false" bgColor="#F7F9FA">
+    <view class="content-view">
+      <view class="content" :style="`height: ${pageHeight}px`">
+        <sticky-swiper-item
+          ref="paging"
+          :showSlotTop="true"
+          :queryApi="queryApi"
+          :queryParams="queryParams"
+          :showEmptyReload="true"
+          emptyImg="/static/images/empty/icon_collect.png"
+          emptyText="暂无收藏记录"
+          emptyReloadText="去看看"
+          @on-empty-reload-click="handleEmptyReloadClick"
+        >
+          <template #top>
+            <u-navbar
+              bgColor="#ffffff"
+              title="我收藏的"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+            />
+            <view class="view-container">
+              <view class="dropdown">
+                <fy-dropdown :menuList="menuList" @change="onSortConfirm" />
+              </view>
+            </view>
+          </template>
+          <template #default="data">
+            <view class="goods-container">
+              <!-- 如果希望其他view跟着页面滚动，可以放在z-paging标签内 -->
+              <goods :product="data.data" :showTop="false" :showOpt="false" />
+              <view class="goods-item-view">
+                <view class="operation">
+                  <template
+                    v-if="
+                      data.data.status_type == PurchaseStatus.OFF_SALE ||
+                      data.data.status_type == PurchaseStatus.SOLD_OUT
+                    "
+                  >
+                    <view>
+                      <view class="btn delete" @tap="handleService">
+                        <text class="text">联系客服</text>
+                      </view>
+                    </view>
+                  </template>
+                  <template v-else>
+                    <view class="btn-box">
+                      <view class="btn delete" @tap="handleDel(data.data)">
+                        <text class="text">删除</text>
+                      </view>
+                      <view class="btn buy" @tap="handleBuy(data.data)">
+                        <text class="text">立即购买</text>
+                      </view>
+                    </view>
+                  </template>
+                </view>
+              </view>
+            </view>
+          </template>
+        </sticky-swiper-item>
+      </view>
+    </view>
+    <purchase-popup ref="purchasePopupRef" />
+    <popup ref="popupRef">
+      <view class="popup">
+        <view class="popup-content">
+          <text class="text">确认要删除选择的记录吗？</text>
+        </view>
+        <view class="btn-box">
+          <view class="btn cancel" @tap="popupRef.close()">
+            <text class="text">再看看</text>
+          </view>
+          <view class="btn confirm" @tap="handleConfirm">
+            <text class="text">确认</text>
+          </view>
+        </view>
+      </view>
+    </popup>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, nextTick, watch, computed } from "vue";
+import { useUserStore } from "@/stores/user";
+import { getCollectionProductList } from "@/api/user";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import GoodsItem from "@/components/goods-item/index.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import Popup from "@/components/my-popup/index.vue";
+import FyDropdown from "@/components/fy-dropdown/fy-dropdown.vue";
+import PurchasePopup from "@/pages/goods/components/purchase-popup.vue";
+import { SearchDropdown } from "@/utils/search-dropdown";
+import { PurchaseStatus } from "@/enums/order";
+import { getOrderPurchasePreview } from "@/api/order";
+import { throttle } from "lodash-es";
+import { consultCustomerService } from "@/components/im/conversation-list";
+import Goods from "@/pages/my/posted-center/components/goods.vue";
+
+const userStore = useUserStore();
+const customStyle = ref({ color: "#1A1A1A", fontSize: "24rpx" });
+
+const paging = ref(null);
+const pageHeight = ref(uni.getSystemInfoSync().windowHeight);
+
+const sort = ref("asc");
+const orderByKey = ref("created_at");
+const purchasePopupRef = ref(null);
+
+const queryApi = ref(getCollectionProductList);
+const { onSortConfirm, menuList, queryData } = SearchDropdown(() => {
+  paging.value.reload();
+});
+
+const queryParams = computed(() => {
+  return {
+    per_page: 20,
+    sort_field: queryData.orderByKey || "created_at",
+    sort_direction: queryData.sort || "asc",
+    device_info: userStore?.userInfo?.device_info,
+  };
+});
+
+const handleBuy = throttle(async (item) => {
+  await getOrderPurchasePreview({
+    product_id: item.product_id,
+  })
+    .then(() => {
+      uni.navigateTo({
+        url: `/pages/goods/front-buy?product_id=${item.product_id}`,
+      });
+    })
+    .catch(({ code }) => {
+      // 重复下单
+      if (code && code == PurchaseStatus.ORDER_DUPLICATE) {
+        purchasePopupRef.value.open();
+      }
+    });
+}, 300);
+
+const product = ref({});
+const popupRef = ref(null);
+const handleDel = (item) => {
+  product.value = item;
+  popupRef.value.open();
+};
+const handleConfirm = throttle(async () => {
+  await userStore.delCollectionProduct(product.value.product_id);
+  uni.$main.toast("删除成功");
+  paging.value.reload();
+  popupRef.value.close();
+}, 300);
+
+const handleService = () => {
+  consultCustomerService();
+};
+
+const handleEmptyReloadClick = (e) => {
+  e(false);
+  uni.switchTab({ url: "/pages/buy-account/index" });
+};
+</script>
+
+<style lang="scss" scoped>
+.popup {
+  flex: 1;
+  @include flex(column);
+  /* max-height: max-content; */
+  .popup-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32rpx;
+    .text {
+      color: #1a1a1a;
+      font-size: 32rpx;
+      font-weight: 400;
+    }
+  }
+  .btn-box {
+    @include flex(row);
+    justify-content: space-between;
+    .btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 236rpx;
+      height: 68rpx;
+      border-radius: 8rpx;
+      .text {
+        font-weight: 500;
+        font-size: 28rpx;
+        color: #ffffff;
+      }
+      &.cancel {
+        background-color: #f4f5f6;
+        .text {
+          color: #606060;
+        }
+      }
+      &.confirm {
+        background-color: #1cc7be;
+      }
+    }
+  }
+}
+.view-container {
+  @include flex(column);
+  background-color: #fff;
+  flex: 1;
+  .dropdown {
+    flex: 1;
+    display: flex;
+    padding: 0 24rpx;
+  }
+}
+
+.goods-container {
+  flex: 1;
+  @include flex(column);
+  justify-content: center;
+  // margin-top: 24rpx;
+  padding: 0 24rpx;
+  :deep(.goods-item) {
+    border-radius: $app-box-radius $app-box-radius 0 0;
+  }
+  .goods-item-view {
+    flex: 1;
+    padding: 24rpx;
+    background-color: #fff;
+    border-radius: 0 0 $app-box-radius $app-box-radius;
+
+    .operation {
+      flex: 1;
+      padding: 24rpx 0;
+      padding-bottom: 0;
+      @include flex(row);
+      justify-content: flex-end;
+      align-items: center;
+      padding-top: 0;
+      // #ifndef APP-NVUE
+      box-sizing: border-box;
+      // #endif
+      .btn-box {
+        @include flex(row);
+        .btn {
+          width: 180rpx;
+          height: 72rpx;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8rpx;
+          .text {
+            font-weight: 500;
+            font-size: 28rpx;
+          }
+          &.delete {
+            background-color: #f4f5f6;
+            margin-right: 20rpx;
+            .text {
+              color: #606060;
+            }
+          }
+          &.buy {
+            background-color: #1cc7be;
+            .text {
+              color: #ffffff;
+            }
+          }
+        }
+      }
+    }
+    .price-box {
+      @include flex(row);
+      flex: 1;
+      align-items: center;
+      justify-content: space-between;
+      .icon-box {
+        @include flex(row);
+        justify-content: space-between;
+        border-radius: 4rpx;
+        .icon {
+          @include flex(row);
+          justify-content: center;
+          align-items: center;
+          &.collect {
+            margin-right: 24rpx;
+          }
+          .text {
+            font-weight: 400;
+            font-size: 24rpx;
+            color: #1a1a1a;
+            // #ifndef APP-NVUE
+            display: block;
+            // #endif
+            margin-left: 4rpx;
+            margin-top: 4rpx;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

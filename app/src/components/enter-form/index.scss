@@ -1,0 +1,306 @@
+
+/* Flex */
+
+/* 1 1 0% */
+.flex-1 {
+	flex: 1;
+}
+
+.flex-row {
+	display: flex;
+	flex-direction: row;
+}
+
+.flex-column {
+	flex-direction: column;
+}
+
+.justify-content-between {
+	justify-content: space-between;
+}
+
+.justify-content-center {
+	justify-content: center;
+}
+
+.justify-content-around {
+	justify-content: space-around;
+}
+	
+.justify-content-end {
+	justify-content: flex-end;
+}
+
+.align-item-start {
+	align-items: flex-start;
+}
+
+.align-item-center {
+	align-items: center;
+}
+
+.flex-wrap {
+	flex-wrap: wrap;
+}
+
+.flex-wrapReverse {
+	flex-wrap: wrap-reverse;
+}
+
+.mask-bg {
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.3)
+}
+
+
+/* 点击态 */
+.hover-bg {
+	background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* color */
+.color-blue {
+	color: #3291f9 !important;
+}
+
+.color-green {
+	color: #45ceb3 !important;
+}
+
+.color-red {
+	color: #f87d6f !important;
+}
+
+.color-orange {
+	color: #FB8C2B !important;
+}
+
+.color-A3 {
+	color: #A3A3A3 !important;
+}
+
+/* .background */
+.background-color-blue {
+	background-color: #3291f9 !important;
+}
+
+.form {
+  display: flex;
+  width: 702rpx;
+  padding: 24rpx;
+	background-color: #ffffff;
+	border-radius: 4rpx;
+	margin-bottom: 24rpx;
+  box-sizing: border-box;
+  .form-label {
+    margin-bottom: 40rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+		color: #000;
+  }
+  .price-box{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: -20rpx;
+    .text {
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #606060;
+      line-height: 28rpx;
+      display: block;
+      margin-bottom: 16rpx;
+      &.orange{
+        color: #F4872A;
+      }
+      &.hong{
+        margin-left: 15rpx;
+        color: #f87d6f;
+      }
+    }
+    .cost{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+    .service{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      .original{
+        text-decoration:line-through
+      }
+      .current{
+        margin-left: 15rpx;
+      }
+    }
+  }
+  .form-item {
+    padding: 30rpx 0;
+    position: relative;
+    &.align-items{
+      align-items: center;
+    }
+    .label-box {
+			margin-right: 10rpx;
+      min-width: 110rpx;
+      .label {
+				display: flex;
+				align-items: center;
+				flex: 1;
+        height: 40rpx;
+        .text {
+					font-size: 28rpx;
+					color: #1A1A1A;
+					font-weight: 500;
+          &.text-title{
+            margin-bottom: 5rpx;
+          }
+        }
+      }
+      .sub-label {
+        font-size: 24rpx;
+        color: #999999;
+      }
+
+      .desc {
+        margin-top: 16rpx;
+        font-size: 26rpx;
+        color: #999999;
+        line-height: 36rpx;
+      }
+    }
+
+    .value-box {
+      flex: 1;
+			display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+			justify-content: flex-end;
+      align-items: flex-end;
+      .upload {
+        flex: 1;      
+        width: 100%; 
+        margin: 10rpx;
+      }
+      .uploadImage {
+        flex: 1;      
+        width: 100%; 
+        margin-top: 10rpx;
+      }
+
+      .value-textarea-position {
+        position: relative;
+        flex: 1;
+        width: 100%;
+      }
+
+      .value-textarea {
+        margin-top: 16rpx;
+        padding: 24rpx;
+        flex: 1;
+				font-weight: 400;
+				font-size: 24rpx;
+				color: #1A1A1A;
+        line-height: 50rpx;
+        background: #F4F5F6;
+        border-radius: 4rpx;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: auto;
+      }
+
+      .textarea-word {
+        position: absolute;
+        right: 16rpx;
+        bottom: 16rpx;
+        border-radius: 4rpx;
+        background: #F4F5F6;
+				.text{
+					font-weight: 400;
+					font-size: 24rpx;
+					color: #AFAFAF;
+				}
+      }
+
+      .value-input {
+        text-align: right;
+				font-weight: 600;
+				font-size: 24rpx;
+				color: #1A1A1A;
+				flex: 1;
+        width: 100%;
+        // caret-color: $app-main-color;
+      }
+			.value-text{
+				font-weight: 400;
+				font-size: 24rpx;
+				color: #1A1A1A;
+				flex: 1;
+				text-align: right;
+			}
+
+      .value-input-textarea {
+        display: flex;
+        flex: 1;
+        font-size: 24rpx;
+        line-height: 36rpx;
+        text-align: right;
+        align-items: flex-end;
+        color: #1A1A1A;
+      }
+
+      .value-switch {
+        text-align: right;
+        height: 40rpx;
+
+        .switch {
+          transform: scale(0.7) translate3d(30rpx, -20rpx, 0);
+        }
+      }
+			.value-radio {
+				flex: 1;
+				align-items: flex-end;
+			}
+			.value-checkbox {
+				flex: 1;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        .pick-text{
+          font-size: 24rpx;
+          color: #1A1A1A;
+          opacity: 0.5;
+        }
+			}
+      .value-text{
+        font-weight: 600;
+        font-size: 24rpx;
+        color: #1A1A1A;
+      }
+      .close-icon {
+        position: absolute;
+        z-index: 1;
+        top: 16rpx;
+        right: 16rpx;
+        width: 44rpx;
+        height: 44rpx;
+        background-color: rgba(127, 142, 172, 0.8);
+        border-radius: 50%;
+      }
+
+      .err-tips-box {
+        text-align: right;
+        flex: 1;
+        align-items: flex-end;
+        margin-top: 10rpx;
+        width: 100%;
+				.text{
+					font-weight: 400;
+					font-size: 24rpx;
+				}
+      }
+    }
+  }
+}

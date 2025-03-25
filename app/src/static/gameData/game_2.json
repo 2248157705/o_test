@@ -1,0 +1,17 @@
+{
+  "gameFormItemParent": [],
+  "gameFormData": [
+    {
+      "type": "input",
+      "parentId": 3,
+      "label": "营地账号",
+      "errTips": "营地账号不能为空",
+      "placeholder": "请输入营地账号",
+      "name": "camp_account",
+      "value": "",
+      "desc": "",
+      "isTitle": true,
+      "required": true
+    }
+  ]
+}

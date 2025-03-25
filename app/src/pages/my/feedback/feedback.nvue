@@ -1,0 +1,241 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#F7F9FA"
+        title="意见反馈"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+      </u-navbar>
+    </template>
+
+    <view class="content">
+      <view class="form">
+        <view class="title">
+          <text class="text">填写意见反馈</text>
+          <text class="require">*</text>
+        </view>
+        <view class="form-item">
+          <view class="form-lable">
+            <text class="text">反馈类型</text>
+          </view>
+          <view class="form-fields" @click="handleShowType">
+            <u--input
+              v-model="formData.feedback_type_label"
+              disabled
+              disabledColor="#f4f5f6"
+              placeholder="请选择"
+              border="none"
+              suffixIcon="arrow-right"
+              :suffixIconStyle="{ color: '#B8B8B8' }"
+            ></u--input>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-lable">
+            <text class="text">建议或吐槽</text>
+          </view>
+          <view class="form-fields" style="padding: 18rpx 10rpx">
+            <u--textarea
+              v-model="formData.problem"
+              placeholder="请填写游戏名称，并提出问题和建议"
+              border="none"
+              height="290rpx"
+              count
+              :clearable="true"
+              :maxlength="500"
+              :placeholderStyle="{ 'font-size': '32rpx' }"
+            ></u--textarea>
+          </view>
+        </view>
+      </view>
+      <view class="tips">
+        <text class="text">
+          感谢您的反馈和建议，我们会积极改进，优化不足！</text
+        >
+      </view>
+      <view class="foot">
+        <view class="btn" @click="handleSubmit">
+          <text class="text">提交</text>
+        </view>
+      </view>
+    </view>
+    <reason-popup
+      ref="reasonRef"
+      title="选择投诉原因"
+      :options="feedBackData.feedbackTypeList"
+      @change="handleSelectType"
+    />
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import ReasonPopup from "./components/reason-popup.vue";
+import { fetchFeedback } from "@/api/user";
+import { Feedback } from "./js/feedback";
+import { useUserStore } from "@/stores/user";
+import Events, { report } from "@/utils/report/report";
+
+const userStore = useUserStore();
+
+const { feedBackData, fetchFeedbackTypeList } = Feedback();
+
+const reasonRef = ref();
+const formData = reactive({
+  feedback_type: "",
+  feedback_type_label: "",
+  problem: "",
+});
+
+onLoad(() => {
+  fetchFeedbackTypeList({
+    submit_type: 1,
+  });
+});
+
+const handleShowType = () => {
+  reasonRef.value?.open();
+};
+const handleSelectType = (value, data) => {
+  if (data.label) {
+    formData.feedback_type = value;
+    formData.feedback_type_label = data.label;
+  } else {
+    formData.feedback_type = "";
+    formData.feedback_type_label = "";
+  }
+};
+
+const handleSubmit = async () => {
+  if (!formData.feedback_type) {
+    return uni.$main.toast("请选择反馈类型");
+  }
+  if (!formData.problem) {
+    return uni.$main.toast("请填写建议或吐槽");
+  }
+  if (formData.problem.length < 15) {
+    return uni.$main.toast("请输入至少15个字");
+  }
+
+  report(Events.MY_FEEDBACK_SUBMIT);
+
+  const res = await fetchFeedback({
+    submit_type: 1,
+    feedback_type: formData.feedback_type,
+    problem: formData.problem,
+    problem_uid: userStore.userInfo.uid,
+  }).catch(() => {
+    uni.$main.toast("反馈失败，请稍候再试");
+  });
+  if (res && res.feedback_id) {
+    uni.$main.toast("感谢您反馈，我们会尽快处理！");
+    uni.$u.sleep(500).then(() => {
+      uni.redirectTo({
+        url: "/pages/my/feedback/index",
+      });
+    });
+  } else {
+    uni.$main.toast("反馈失败，请稍候再试");
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  margin: 24rpx;
+
+  .title {
+    margin-bottom: 16rpx;
+    @include flex(row);
+
+    .text {
+      font-weight: 500;
+      font-size: 32rpx;
+      color: #1a1a1a;
+    }
+    .require {
+      color: #ff0000;
+    }
+  }
+
+  .tips {
+    margin-top: 28rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .text {
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #afafaf;
+    }
+  }
+  .form-item {
+    padding: 24rpx;
+    margin-bottom: 16rpx;
+    background-color: #fff;
+    border-radius: 12rpx 12rpx 12rpx 12rpx;
+
+    .form-lable {
+      margin-bottom: 20rpx;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #1a1a1a;
+        line-height: 38rpx;
+      }
+    }
+
+    .form-fields {
+      padding: 24rpx;
+      background: #f4f5f6;
+      border-radius: 8rpx 8rpx 8rpx 8rpx;
+    }
+  }
+
+  .foot {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 24rpx;
+    background-color: #fff;
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 702rpx;
+      height: 96rpx;
+      background: #1cc7be;
+      border-radius: 12rpx 12rpx 12rpx 12rpx;
+
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+    }
+  }
+}
+::v-deep .content .u-textarea {
+  background: transparent !important;
+}
+
+::v-deep .content .u-textarea .u-textarea__count {
+  background: transparent !important;
+}
+
+::v-deep .content .u-textarea .input-placeholder {
+  line-height: 40rpx !important;
+  font-size: 28rpx !important;
+}
+
+::v-deep .content .u-radio__text {
+  font-weight: 500;
+}
+</style>

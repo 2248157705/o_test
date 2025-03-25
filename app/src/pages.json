@@ -1,0 +1,762 @@
+{
+	"pages": [
+		{
+			"path": "pages/home/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/buy-account/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/sell-account/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "components/im/chat/index",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationBarBackgroundColor": "#F7F9FA",
+				"app-plus": {
+					"softinputMode": "adjustResize"
+					
+				}
+			}
+		},
+		{
+			"path": "components/im/chat/video-play",
+			"style": {
+				"navigationBarTitleText": "视频播放",
+				"navigationBarTextStyle": "#FFFFFF",
+				"navigationBarBackgroundColor": "#000000"
+			}
+		},
+		{
+			"path": "pages/message/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "消息"
+			}
+		},
+		{
+			"path": "pages/message/empty",
+			"style": {}
+		},
+		{
+			"path": "pages/my/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#F9FAFD"
+			}
+		},
+		{
+			"path": "pages/my/posted-center/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#F9FAFD"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/index",
+			"style": {
+				"navigationBarTitleText": "系统设置",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/real-name",
+			"style": {
+				"navigationBarTitleText": "实名认证",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/notic-settings",
+			"style": {
+				"navigationBarTitleText": "通知设置",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/associate-phone",
+			"style": {
+				"navigationBarTitleText": "绑定手机号",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/account-security",
+			"style": {
+				"navigationBarTitleText": "账号与安全",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/privacy-settings",
+			"style": {
+				"navigationBarTitleText": "隐私设置",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/avatar",
+			"style": {
+				"navigationBarTitleText": "修改头像",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/cancel-account",
+			"style": {
+				"navigationBarTitleText": "注销账号",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/settings-center/reminder-account",
+			"style": {
+				"navigationBarTitleText": "提现账号管理",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/proposal-center/index",
+			"style": {
+				"navigationBarTitleText": "我的建议",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/help-center/index",
+			"style": {
+				"navigationBarTitleText": "帮助中心",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/help-center/explain",
+			"style": {
+				"navigationBarTitleText": "",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/security-center/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "安全中心",
+				"backgroundColor": "#F7F9FA",
+				"app-plus": {
+					"background": "#F7F9FA"
+				}
+			}
+		},
+		{
+			"path": "pages/my/security-center/purchase-process",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"navigationBarTitleText": "买号流程"
+			}
+		},
+		{
+			"path": "pages/my/platform-rules/index",
+			"style": {
+				"navigationBarTitleText": "平台规则",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/balance-payouts/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/balance-payouts/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/balance-payouts/balance-list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/balance-payouts/zfb",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/collection-center/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#F9FAFD"
+			}
+		},
+		{
+			"path": "pages/my/collection-center/browsing-history",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#F9FAFD"
+			}
+		},
+		{
+			"path": "pages/my/collection-center/consultation-records",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#F9FAFD"
+			}
+		},
+		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/order/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/order/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/order/after-sale",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/order/after-claims",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/order/pay-sucess",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/bargain/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/bargain/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/customer-service/h5"
+		},
+		{
+			"path": "components/faDada-verification/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "components/real-verification/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/sell-account/sell-information-enter/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#F7F9FA"
+			}
+		},
+		{
+			"path": "pages/sell-account/sell-game-enter/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"background": "#FFFFFF"
+				}
+			}
+		},
+		{
+			"path": "pages/goods/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/goods/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/goods/front-buy",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/search/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "components/test-component/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/web-view/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/leader-board/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/pick-leaks/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/seckill-zone/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/raffle/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/raffle/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/raffle/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/valuation/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/valuation/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/valuation/result",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/guarantee/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/lightning-recycle/list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/my/feedback/index",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/feedback/complaint",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/feedback/complaint-list",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/feedback/complaint-detail",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "pages/my/feedback/feedback",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
+			"path": "uni_modules/imengyu-IMDebuggerWindow/pages/debugger",
+			"style": {
+				"navigationBarTitleText": "调试输出窗口",
+				"disableScroll": true,
+				"background": "#f0f0f0"
+			}
+		},
+		{
+			"path": "pages/push/push",
+			"style": {
+				"navigationBarTitleText": "push测试",
+				"background": "#f0f0f0"
+			}
+		},
+		{
+			"path": "pages/upgrade-popup/upgrade-popup",
+			"style": {
+				"disableScroll": true,
+				"app-plus": {
+					"backgroundColorTop": "transparent",
+					"background": "transparent",
+					"titleNView": false,
+					"scrollIndicator": "none",
+					"popGesture": "none",
+					"animationType": "fade-in",
+					"animationDuration": 200
+
+				}
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "pages/my",
+			"pages": [
+				{
+					"path": "contract-center/index",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "contract-center/detail",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/announcement",
+			"pages": [
+				{
+					"path": "underage",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "fraud-guide",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "platform-intro",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/audit/appstore",
+			"pages": [
+				{
+					"path": "home",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "security-center",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "appraise",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "my",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "login",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "order",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "detail",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "platform-rules",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "bargain",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/audit/taotiao",
+			"pages": [
+				{
+					"path": "home",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "security-center",
+					"style": {
+						"navigationStyle": "custom",
+						"backgroundColor": "#FFFFFF"
+					}
+				},
+				{
+					"path": "order",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "my",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "login",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "detail",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				},
+				{
+					"path": "platform-rules",
+					"style": {
+						"navigationStyle": "custom",
+						"background": "#FFFFFF"
+					}
+				}
+			]
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "游戏帐号交易",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#FFFFFF",
+		"rpxCalcMaxDeviceWidth": 960,
+		"rpxCalcBaseDeviceWidth": 375,
+		"rpxCalcIncludeWidth": 750,
+		"scrollIndicator": "none",
+		"app-plus": {
+			"scrollIndicator": "none",
+			"bounce": "none"
+		}
+	},
+	"tabBar": {
+		"color": "#434343",
+		"selectedColor": "#434343",
+		"backgroundColor": "#FFFFFF",
+		"position": "bottom",
+		"borderStyle": "#FFFFFF",
+		"fontSize": "12px",
+		"list": [
+			{
+				"pagePath": "pages/home/index",
+				"text": "首页",
+				"visible": false
+			},
+			{
+				"pagePath": "pages/buy-account/index",
+				"text": "买号",
+				"visible": false
+			},
+			{
+				"pagePath": "pages/sell-account/index",
+				"text": "卖号",
+				"visible": false
+			},
+			{
+				"pagePath": "pages/message/index",
+				"text": "消息",
+				"visible": false
+			},
+			{
+				"pagePath": "pages/my/index",
+				"text": "我的",
+				"visible": false
+			}
+		],
+		"midButton": {
+		}
+	}
+}

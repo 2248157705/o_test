@@ -1,0 +1,386 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <z-paging
+      ref="pagePagingRef"
+      nvue-list-id="z-paging-nlist"
+      refresher-only
+      hide-nvue-bottom-tag
+      @on-refresh="onRefresh"
+    >
+      <!-- 这个cell包含了吸顶view和主体列表，其高度必须等于页面可见高度 -->
+      <template #top>
+        <view id="headerRef" ref="headerRef">
+          <u-navbar
+            bgColor="#ffffff"
+            title="合同中心"
+            :placeholder="true"
+            :autoBack="true"
+            :safeAreaInsetTop="true"
+          />
+          <view class="view-container">
+            <view class="search">
+              <search
+                :searchBoxStyle="{ padding: '24rpx 0' }"
+                :disabled="false"
+                @search="handleSearch"
+              />
+            </view>
+            <view class="tabs">
+              <z-tabs
+                ref="tabsRef"
+                barWidth="56rpx"
+                barHeight="8rpx"
+                :list="tabColumns"
+                :current="current"
+                :inactiveStyle="inactiveStyle"
+                :tabsStyle="tabsStyle"
+                :activeStyle="activeStyle"
+                :barStyle="barStyle"
+                @change="tabsChange"
+              />
+            </view>
+          </view>
+        </view>
+      </template>
+      <!-- 吸顶view -->
+      <cell>
+        <view class="paging-content" :style="'height:' + pageHeight + 'px'">
+          <!-- 吸顶view -->
+          <!-- 注意！此处的z-tabs为独立的组件，可替换为第三方的tabs，若需要使用z-tabs，请在插件市场搜索z-tabs并引入，否则会报插件找不到的错误 -->
+
+          <!-- swiper -->
+          <swiper
+            class="swiper"
+            :current="current"
+            @change="swiperChange"
+            @transition="swiperTransition"
+            @animationfinish="swiperAnimationfinish"
+          >
+            <swiper-item
+              v-for="(item, index) in tabColumns"
+              :key="index"
+              class="swiper-item"
+            >
+              <sticky-swiper-item
+                v-slot="data"
+                :ref="(el) => (swiperItems[index] = el)"
+                :tabIndex="index"
+                :currentIndex="current"
+                :queryApi="queryApi"
+                :queryParams="queryParams"
+                emptyImg="/static/images/empty/icon_contract.png"
+                emptyText="暂无合同"
+              >
+                <view class="contract">
+                  <view class="contract-item">
+                    <view class="game-view">
+                      <view class="cover-view">
+                        <image class="cover" :src="data.data.game_icon" />
+                      </view>
+                      <text class="text">{{ data.data.game_name }}</text>
+                    </view>
+                    <view class="msg-view">
+                      <view class="msg-item">
+                        <text class="title text">订单编号</text>
+                        <text class="value text">{{ data.data.order_id }}</text>
+                      </view>
+                      <view class="msg-item">
+                        <text class="title text">商品编号</text>
+                        <text class="value text">{{
+                          data.data.product_id
+                        }}</text>
+                      </view>
+                      <view class="msg-item">
+                        <text class="title text">交易账号</text>
+                        <text class="value text">{{
+                          data.data.product_account
+                        }}</text>
+                      </view>
+                      <view class="msg-item">
+                        <text class="title text">签署人</text>
+                        <text class="value text"
+                          >{{ data.data.buyer_name }}
+                          {{ data.data.seller_name }}</text
+                        >
+                      </view>
+                    </view>
+                    <view class="operation-view">
+                      <text class="time"
+                        >发起时间 {{ formatDate(data.data.created_at) }}</text
+                      >
+                      <template v-if="data.data.sign_type">
+                        <view
+                          class="btn-view check"
+                          @tap="handleSign(data.data.sign_task_id)"
+                        >
+                          <text class="text">查看</text>
+                        </view>
+                      </template>
+                      <template v-else>
+                        <view
+                          class="btn-view sign"
+                          @tap="handleSign(data.data.sign_task_id)"
+                        >
+                          <text class="text">去签署</text>
+                        </view>
+                      </template>
+                    </view>
+                  </view>
+                  <view class="contract-sign">
+                    <image
+                      class="cover"
+                      :src="`/static/images/my/${
+                        data.data.sign_type ? 'icon_signed' : 'icon_not_signed'
+                      }.png`"
+                    />
+                  </view>
+                </view>
+              </sticky-swiper-item>
+            </swiper-item>
+          </swiper>
+        </view>
+      </cell>
+      <!-- </view> -->
+    </z-paging>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, watch, computed, nextTick } from "vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import Search from "@/components/search/index.vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { getContractList } from "@/api/user";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import {
+  tabsStyle,
+  inactiveStyle,
+  activeStyle,
+  barStyle,
+} from "@/utils/operation-style";
+import dayjs from "dayjs";
+
+// const placeholderStyle = reactive({
+//   fontSize: "24rpx",
+//   color: "#AFAFAF",
+// });
+const queryApi = ref(getContractList);
+
+const searchKey = ref(null);
+
+const tabColumns = ref([
+  { name: "全部", value: "all" },
+  { name: "未签署", value: "unsign" },
+  { name: "已签署", value: "sign" },
+]);
+const formatDate = computed(() => {
+  return (created_at) => {
+    return dayjs.unix(created_at).format("YYYY-MM-DD");
+  };
+});
+const {
+  headerRef,
+  tabsRef,
+  pagePagingRef,
+  swiperItems,
+  pageHeight,
+  current,
+  tabsChange,
+  swiperAnimationfinish,
+  swiperTransition,
+  swiperChange,
+  getPageHeight,
+  onRefresh,
+  onReload,
+} = TabsSwiper();
+
+const queryParams = computed(() => {
+  return {
+    perPage: 20,
+    signType: tabColumns.value[current.value].value,
+    searchKey: searchKey.value,
+  };
+});
+
+onLoad(() => {
+  nextTick(() => {
+    getPageHeight();
+  });
+});
+
+onShow(() => {
+  onRefresh();
+});
+
+const handleSearch = (search) => {
+  searchKey.value = search;
+  onRefresh();
+};
+
+// 设置子组件嵌套list父容器支持swiper-list吸顶滚动效果的方法
+const setListSpecialEffects = () => {
+  nextTick(() => {
+    swiperItems.value[current.value]?.setSpecialEffects(0);
+  });
+};
+
+const handleSign = (signId) => {
+  uni.navigateTo({ url: `/pages/my/contract-center/detail?signId=${signId}` });
+};
+
+watch(
+  () => current.value,
+  () => {
+    setListSpecialEffects();
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => tabColumns.value,
+  () => {
+    onReload();
+  },
+  { immediate: true }
+);
+</script>
+
+<style lang="scss" scoped>
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+  justify-content: center;
+}
+.paging-content {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  .contract {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    padding: 0 24rpx;
+    position: relative;
+    overflow: hidden;
+    .contract-item {
+      margin-top: 24rpx;
+      padding: 24rpx;
+      background-color: #fff;
+      border-radius: 8rpx;
+      flex: 1;
+      .game-view {
+        @include flex(row);
+        align-items: center;
+        margin-bottom: 24rpx;
+        .cover-view {
+          width: 52rpx;
+          height: 52rpx;
+          margin-right: 14rpx;
+          .cover {
+            width: 52rpx;
+            height: 52rpx;
+            border-radius: 4rpx;
+          }
+        }
+        .text {
+          font-weight: 600;
+          font-size: 24rpx;
+          color: #1a1a1a;
+        }
+      }
+      .msg-view {
+        @include flex(column);
+        margin-bottom: 24rpx;
+        .msg-item {
+          @include flex(row);
+          margin-bottom: 24rpx;
+          .text {
+            font-weight: 400;
+            font-size: 24rpx;
+            color: #1a1a1a;
+            &.title {
+              font-weight: 600;
+              margin-right: 24rpx;
+            }
+          }
+        }
+      }
+      .operation-view {
+        @include flex(row);
+        justify-content: space-between;
+        align-items: center;
+        .time {
+          font-weight: 400;
+          font-size: 24rpx;
+          color: #afafaf;
+        }
+        .btn-view {
+          width: 162rpx;
+          height: $app-small-btn-height;
+          background: $app-main-color;
+          border-radius: $app-box-radius;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          .text {
+            font-weight: 500;
+            font-size: 22rpx;
+            color: #ffffff;
+          }
+        }
+      }
+    }
+  }
+  .contract-sign {
+    width: 145rpx;
+    height: 168rpx;
+    position: absolute;
+    top: 50%;
+    right: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* margin-top: -84rpx; */
+    .cover {
+      width: 145rpx;
+      height: 168rpx;
+    }
+  }
+}
+
+.view-container {
+  @include flex(column);
+  background-color: #fff;
+  align-items: center;
+  flex: 1;
+  .search {
+    width: 702rpx;
+  }
+  .tab-right {
+    width: 60rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    &.active {
+      transform: rotate(180deg);
+    }
+  }
+  .tabs {
+    flex: 1;
+    background-color: #fff;
+  }
+  .dropdown {
+    padding: 0 24rpx;
+    width: 702rpx;
+    // #ifndef APP-NVUE
+    box-sizing: border-box;
+    // #endif
+    display: flex;
+    flex-direction: row;
+    z-index: 9999;
+    background-color: #fff;
+  }
+}
+</style>

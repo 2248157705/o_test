@@ -1,0 +1,4 @@
+<resources>
+    <string name="dcloud_permission_write_external_storage_message">我们需要访问您的相册和相机以便您可以拍摄或选择头像，此信息仅用于更新您的个人资料图片及向客服反馈问题</string>  
+    <string name="dcloud_permission_read_phone_state_message">我们需要访问您的手机存储（系统提示为访问设备上的照片、媒体内容和文件）权限，用于读取应用保存运行状态等信息</string>  
+</resources>

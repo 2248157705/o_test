@@ -1,0 +1,176 @@
+<template>
+  <GlobalView :showBar="false">
+    <view class="help-center-wrapper">
+      <!-- <u-subsection
+      :list="subsectionList"
+      :current="tabIndex"
+      activeColor="#FFFFFF"
+      customStyle="height:76rpx;"
+      @change="onSectionChange"
+    ></u-subsection> -->
+      <!-- <tab-subsection/> -->
+      <view class="tab-wrapper">
+        <view
+          :class="`tab-item ${tabIndex == index ? 'tab-item__active' : ''}`"
+          v-for="(item, index) in subsectionList"
+          :key="index"
+          @click="onSectionChange(index)"
+        >
+          <text
+            :class="`text ${tabIndex == index ? 'tab-item__active-text' : ''}`"
+            >{{ item }}</text
+          >
+        </view>
+      </view>
+      <u-cell-group :border="false" style="margin-top: 10rpx">
+        <block v-for="(item, index) in cellList[tabIndex]" :key="index">
+          <u-cell
+            :title="item.label"
+            :border="false"
+            @click="navigatorToExplain(item)"
+          >
+            <!-- :border="cellList[tabIndex].length === index + 1 ? false : true" -->
+            <template #value>
+              <u--image
+                src="/static/images/my/icon_back.png"
+                width="56rpx"
+                height="56rpx"
+              ></u--image>
+            </template>
+          </u-cell>
+          <!-- F4F5F6 -->
+          <u-line
+            color="#F4F5F6"
+            v-if="cellList[tabIndex].length === index + 1 ? false : true"
+          ></u-line>
+        </block>
+      </u-cell-group>
+      <!--
+    <view></view> -->
+    </view>
+  </GlobalView>
+</template>
+
+<script lang="ts" setup>
+import GlobalView from "@/components/global-view/index.vue";
+import { reactive, ref } from "vue";
+
+const subsectionList = ref(["买家相关", "卖家相关", "售后相关"]);
+const tabIndex = ref(0);
+
+const cellList = reactive({
+  0: [
+    {
+      label: "退款要多久才到账",
+      type: "refund_account",
+    },
+    {
+      label: "如何求降价",
+      type: "price_reduction",
+    },
+    {
+      label: "如何签署电子合同",
+      type: "contract",
+    },
+    {
+      label: "购买流程是怎样的",
+      type: "purchase_process",
+    },
+    {
+      label: "如何联系客服",
+      type: "customer_service",
+    },
+    {
+      label: "被找回如何售后、理赔",
+      type: "after_sales",
+    },
+  ],
+  1: [
+    {
+      label: "如何签署电子合同 ",
+      type: "contract",
+    },
+    {
+      label: "什么时候收到卖号款",
+      type: "collection_time",
+    },
+    {
+      label: "如何卖号",
+      type: "selling_accounts",
+    },
+    {
+      label: "如何投诉与建议",
+      type: "complaint_suggestions",
+    },
+    {
+      label: "如何联系客服",
+      type: "customer_service",
+    },
+  ],
+  2: [
+    {
+      label: "如何投诉与建议",
+      type: "complaint_suggestions",
+    },
+    {
+      label: "被找回如何售后、理赔",
+      type: "after_sales",
+    },
+    {
+      label: "如何联系客服",
+      type: "customer_service",
+    },
+  ],
+});
+
+const navigatorToExplain = (record: any) => {
+  // if (record.type === "customer_service") {
+  //   consultCustomerService();
+  //   return;
+  // }
+  uni.navigateTo({
+    url:
+      `/pages/my/help-center/explain?title=${record.label}&type=` + record.type,
+  });
+};
+const onSectionChange = (index: number) => {
+  tabIndex.value = index;
+};
+</script>
+
+<style lang="scss" scoped>
+.help-center-wrapper {
+  padding: 0 20rpx 20rpx 20rpx;
+  .tab-wrapper {
+    @include flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f4f5f6;
+    border-radius: 4rpx;
+    .tab-item {
+      @include flex;
+      align-items: center;
+      justify-content: center;
+      width: 212rpx;
+      height: 60rpx;
+      border-radius: 4rpx;
+      margin: 8rpx;
+      .text {
+        font-size: 28rpx;
+        color: #606060;
+      }
+      &__active {
+        background: $app-main-color;
+      }
+      &__active-text {
+        color: #ffffff !important;
+      }
+    }
+    .text {
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #606060;
+    }
+  }
+}
+</style>

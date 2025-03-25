@@ -1,0 +1,343 @@
+<!-- 自定义导航栏演示 -->
+<!--  此demo使用了uView的Navbar 自定义导航栏 https://uviewui.com/components/navbar.html -->
+<template>
+  <global-view :showBar="false" :showBgImage="true" bgColor="#F7F9FA">
+    <view class="content-view">
+      <view class="content" :style="`height: ${pageHeight}px`">
+        <sticky-swiper-item
+          ref="paging"
+          :showSlotTop="true"
+          :queryApi="queryApi"
+          :queryParams="queryParams"
+        >
+          <template #top>
+            <u-navbar
+              bgColor="rgba(0,0,0,0)"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+              :title="currentGame.game_name + '号商'"
+            />
+          </template>
+          <template v-slot:default="{ data, num }">
+            <view class="goods-container" @tap="handleService(data)">
+              <!-- 如果希望其他view跟着页面滚动，可以放在z-paging标签内 -->
+              <view class="goods-item-view">
+                <view class="item-tips">
+                  <view class="bg-line"></view>
+                  <view class="tips">
+                    <image
+                      class="sd"
+                      src="/static/images/sell/icon_recycle_sd.png"
+                    />
+                    <text class="text">回收：</text>
+                  </view>
+                  <view class="text">
+                    <u--text
+                      :lines="1"
+                      lineHeight="28rpx"
+                      size="24rpx"
+                      :block="false"
+                      color="#6C4200"
+                      :text="tipsTitle"
+                    ></u--text>
+                  </view>
+                </view>
+                <view class="item-view">
+                  <image mode="aspectFill" class="avatar" :src="data.avatar" />
+                  <view class="item-msg">
+                    <view class="msg-inter">
+                      <u--text
+                        :lines="1"
+                        lineHeight="38rpx"
+                        size="32rpx"
+                        :block="false"
+                        bold
+                        color="#1A1A1A"
+                        :text="data.position_title"
+                      ></u--text>
+                    </view>
+                    <view class="msg-inter">
+                      <u--text
+                        :lines="1"
+                        lineHeight="34rpx"
+                        size="28rpx"
+                        :block="false"
+                        color="#606060"
+                        :text="data.position_subtitle"
+                      ></u--text>
+                    </view>
+                    <view class="icon-list">
+                      <image
+                        class="tips credit"
+                        src="/static/images/sell/icon_recycle_credit1.png"
+                      />
+                      <image
+                        class="tips"
+                        src="/static/images/sell/icon_recycle_tips.png"
+                      />
+                    </view>
+                  </view>
+                </view>
+                <view class="operation">
+                  <view class="btn-box">
+                    <view class="btn buy">
+                      <text class="text">联系号商</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </template>
+        </sticky-swiper-item>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, watch, computed } from "vue";
+import { useUserStore } from "@/stores/user";
+import { getMerchantUserList } from "@/api/user";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import { formatDate } from "@/utils";
+import {
+  navigateToMerchantContact,
+  navigateToPMerchantContact,
+} from "@/components/im/conversation-list";
+import { assembleGameForm } from "@/gameData";
+import { onLoad } from "@dcloudio/uni-app";
+import Events, { report } from "@/utils/report/report";
+import { MerchantContactEnter } from "@/enums/common";
+
+const userStore = useUserStore();
+const currentGame = userStore.gameHistory[0];
+
+const paging = ref(null);
+const pageHeight = ref(uni.getSystemInfoSync().windowHeight);
+
+const queryApi = ref(getMerchantUserList);
+
+const queryParams = computed(() => {
+  return {
+    game_id: currentGame.id,
+    per_page: 20,
+  };
+});
+
+const tipsTitle = ref("");
+
+onLoad(async () => {
+  const { gameFormData } = await assembleGameForm(currentGame.id);
+  tipsTitle.value =
+    gameFormData
+      .filter((item) => item.type == "checkbox")
+      .map((item) => {
+        return item.label;
+      })
+      .toString() || "优质号商，快捷回收，速放款，高效回血";
+});
+
+const handleService = (data) => {
+  if (userStore.userInfo.uid == data.uid) {
+    uni.$main.toast("不能联系自己");
+    return;
+  }
+  report(Events.SELL_RECYCLE_CS, { uid: data.uid });
+  // navigateToPMerchantContact(
+  //     { uid: data.uid },
+  //     MerchantContactEnter.PRODUCT_DETAILS,null
+  // );
+  navigateToMerchantContact({ uid: data.uid });
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+
+.popup {
+  flex: 1;
+  @include flex(column);
+  /* max-height: max-content; */
+  .popup-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32rpx;
+    .text {
+      color: #1a1a1a;
+      font-size: 32rpx;
+      font-weight: 400;
+    }
+  }
+  .btn-box {
+    @include flex(row);
+    justify-content: space-between;
+    .btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 236rpx;
+      height: 68rpx;
+      border-radius: 8rpx;
+      .text {
+        font-weight: 500;
+        font-size: 28rpx;
+        color: #ffffff;
+      }
+      &.cancel {
+        background-color: #f4f5f6;
+        .text {
+          color: #606060;
+        }
+      }
+      &.confirm {
+        background-color: #1cc7be;
+      }
+    }
+  }
+}
+.view-container {
+  @include flex(column);
+  background-color: #fff;
+  flex: 1;
+  .dropdown {
+    flex: 1;
+    display: flex;
+    padding: 0 24rpx;
+  }
+}
+
+.goods-container {
+  flex: 1;
+  @include flex(column);
+  justify-content: center;
+  margin-top: $app-box-margin-top;
+  padding: 0 24rpx;
+  border-radius: $app-box-radius;
+  .goods-item-view {
+    flex: 1;
+    padding-bottom: 24rpx;
+    border-radius: $app-box-radius;
+    background-color: #fff;
+    border-radius: 4rpx;
+    .item-tips {
+      @include flex(row);
+      align-items: center;
+      height: 72rpx;
+      background: linear-gradient(to right, #fffcf0, #fff5d1);
+      border-top-left-radius: $app-box-radius;
+      border-top-right-radius: $app-box-radius;
+      position: relative;
+      padding: 0 22rpx;
+      .bg-line {
+        width: 556rpx;
+        height: 12rpx;
+        background: #fff1b8;
+        border-radius: 4rpx;
+        position: absolute;
+        right: 24rpx;
+        bottom: 18rpx;
+      }
+      .tips {
+        @include flex(row);
+        align-items: center;
+        .sd {
+          width: 32rpx;
+          height: 32rpx;
+          margin-right: 4rpx;
+        }
+        .text {
+          font-weight: 600;
+          font-size: 28rpx;
+          line-height: 28rpx;
+          color: #ffc226;
+        }
+      }
+      .text {
+        flex: 1;
+      }
+    }
+    .item-view {
+      padding: 24rpx;
+      @include flex(row);
+      align-items: center;
+      border-radius: $app-box-radius;
+      .avatar {
+        width: 210rpx;
+        height: 144rpx;
+        border-radius: $app-box-radius;
+        margin-right: 16rpx;
+      }
+      .item-msg {
+        @include flex(column);
+        .msg-inter {
+          width: 400rpx;
+          @include flex(row);
+          .text {
+            font-weight: 600;
+            font-size: 32rpx;
+            color: #1a1a1a;
+          }
+          .text2 {
+            font-weight: 400;
+            font-size: 28rpx;
+            color: #606060;
+          }
+        }
+        .icon-list {
+          @include flex(row);
+          align-items: center;
+          margin-top: 8rpx;
+          .tips {
+            width: 206rpx;
+            height: 48rpx;
+            &.credit {
+              width: 182rpx;
+              height: 40rpx;
+              margin-right: 8rpx;
+            }
+          }
+        }
+      }
+    }
+    .operation {
+      flex: 1;
+      @include flex(row);
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 24rpx;
+      border-radius: $app-box-radius;
+      .time {
+        font-weight: 500;
+        font-size: 24rpx;
+        color: #1a1a1a;
+      }
+      .btn-box {
+        @include flex(row);
+        .btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: $app-box-radius;
+          height: $app-small-btn-height;
+          padding: 0 56rpx;
+          .text {
+            font-weight: 500;
+            font-size: 28rpx;
+          }
+
+          &.buy {
+            background-color: #f4f5f6;
+            .text {
+              color: #1a1a1a;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</style>

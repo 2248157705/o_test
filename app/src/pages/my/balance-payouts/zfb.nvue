@@ -1,0 +1,172 @@
+<template>
+  <global-view bgColor="#fff">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="绑定支付宝"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="content" :style="'height:' + pageHeight + 'px'">
+      <view class="real-view">
+        <view class="my-input">
+          <view class="label"> <text class="text">真实姓名</text></view>
+          <u--input
+            v-model="formData.userName"
+            type="text"
+            placeholder="请输实名认证姓名"
+            font-size="32rpx"
+            color="#1A1A1A"
+            border="none"
+            clearable
+            :readonly="true"
+            :placeholderStyle="placeholderStyle"
+          />
+        </view>
+        <view class="my-input">
+          <view class="label"> <text class="text">支付宝帐号</text></view>
+
+          <u--input
+            v-model.trim="formData.account"
+            type="text"
+            placeholder="请输入支付宝账号"
+            font-size="32rpx"
+            color="#1A1A1A"
+            border="none"
+            clearable
+            :placeholderStyle="placeholderStyle"
+          />
+        </view>
+      </view>
+
+      <my-button
+        class="confirm"
+        height="84"
+        radius="2"
+        text="确定"
+        type="primary"
+        size="32"
+        @click="handleSubmit"
+      />
+      <!-- :disabled="formData.account ? false : true" -->
+    </view>
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { ref, nextTick, reactive, watch } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import { TabsSwiper } from "@/utils/tabs-swiper";
+import { useUserStore } from "@/stores/user";
+import { bindPayAccount } from "@/api/user";
+
+const { pageHeight, getPageHeight } = TabsSwiper();
+const userStore = useUserStore();
+
+const formData = reactive({
+  userName: "",
+  account: "",
+});
+
+const placeholderStyle = reactive({
+  color: "#AFAFAF",
+  fontSize: "32rpx",
+});
+
+watch(
+  () => userStore.userInfo,
+  (values) => {
+    if (values.identifyNum) {
+      formData.userName = values.true_name;
+    }
+  },
+  {
+    deep: true,
+    immediate: true,
+  }
+);
+
+const backpage = ref("");
+onLoad((options) => {
+  backpage.value = options.backpage;
+  nextTick(() => {
+    getPageHeight();
+  });
+});
+
+const handleSubmit = async () => {
+  if (!formData.account) {
+    return uni.$main.toast("请输入支付宝帐号");
+  }
+  const res = await bindPayAccount({
+    app_id: import.meta.env.VITE_APP_ZFB_APPID,
+    bind_pay_account: 1,
+    account_source: "ALIPAY_LOGON_ID",
+    account: formData.account,
+  }).catch((err) => {
+    console.log(err);
+    uni.$main.toast(err?.msg);
+  });
+  if (res) {
+    uni.$main.toast("绑定成功");
+    let url = `/pages/my/balance-payouts/index`;
+    if (backpage.value === "reminder_account") {
+      url = "/pages/my/settings-center/reminder-account";
+    }
+    uni.redirectTo({
+      url: url,
+    });
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  padding: 24rpx;
+
+  .real-view {
+    padding: 0 0 48rpx 0;
+    .my-input {
+      // margin: 0 24px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      border-radius: 8rpx;
+      margin-bottom: 40rpx;
+      padding: 20rpx 0rpx;
+      border-bottom: 2rpx solid #f4f5f6;
+    }
+
+    .label {
+      width: 200rpx;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #1a1a1a;
+      }
+    }
+  }
+
+  .btn-real-box {
+    .btn {
+      height: 96rpx;
+      background-color: #afafaf;
+      border-radius: 8rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+      &.active {
+        background-color: #1cc7be;
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,104 @@
+		/* 行为相关颜色 */
+	$uni-color-primary: #007aff;
+	$uni-color-success: #4cd964;
+	$uni-color-warning: #f0ad4e;
+	$uni-color-error: #dd524d;
+	$uni-color-close: #E4E4E4;
+	
+	/* 文字基本颜色 */
+	$uni-text-color-white:#FFFFFF;//白色
+	$uni-text-color-darkgrey:#676767;// 深灰
+	$uni-text-color-shallowgrey:#9D9D9D;// 浅灰
+	$uni-text-color-shallowgrey-one:#BEBEBE;// 浅灰#
+	$uni-text-color-shallowgrey-two:#B0B0B0;// 浅灰
+	$uni-text-color-shallowgrey-three:#D7D7D7;// 浅灰
+	$uni-text-color-shallowgrey-four:#F4F4F8;// 浅灰
+	
+	
+	$uni-text-color:#333;//基本色
+	$uni-text-color-inverse:#fff;//反色
+	$uni-text-color-grey:#9D9D9D;//辅助灰色，如加载更多的提示信息
+	$uni-text-color-placeholder: #808080;
+	$uni-text-color-disable:#c0c0c0;
+	
+	$uni-text-color-boldblack:#000000; // 深黑
+	$uni-text-color-baseblack:#474747; // 基本黑
+	$uni-text-color-priceblack:#474747; // 价格黑
+	$uni-text-color-pricered:#F82323; // 价格红
+	$uni-text-color-green:#1BCC5A; //
+	
+	
+	/* 背景颜色 */  
+	$uni-bg-color:#ffffff;
+	$uni-bg-color-grey-white:#FCFCFC; //灰白
+	$uni-bg-color-grey:#F6F6F6;
+	$uni-bg-color-basegrey:#E6E6E6;
+	$uni-bg-color-basegrey-one:#E9E9E9;
+	$uni-bg-color-basegrey-two:#F7F7F7;
+	$uni-bg-color-basegrey-three:#F4F4F4;
+	
+	$uni-bg-color-hover:#f1f1f1;//点击状态颜色
+	$uni-bg-color-mask:rgba(0, 0, 0, 0.4);//遮罩颜色
+	$uni-bg-color-boldorange:#FF7D44; // 深橙色
+	$uni-bg-color-orange:#FD693A; // 橙色
+	
+	$uni-bg-color-brown:#D66B3C; //棕色
+	$uni-bg-color-green:#58BE6B; //绿色
+	
+	
+	/* 边框颜色 */
+	$uni-border-color:#E6E6E6;
+	
+	/* 尺寸变量 */
+	
+	/* 文字尺寸 */
+	$uni-font-size-sm:12px;
+	$uni-font-size-base:14px;
+	$uni-font-size-lg:16;
+	
+	 
+	
+	/* Border Radius */
+	$uni-border-radius-sm: 2px;
+	$uni-border-radius-base: 16rpx;
+	$uni-border-radius-lg: 6px;
+	$uni-border-radius-circle: 50%;
+	
+	/* 水平间距 */
+	$uni-spacing-row-sm: 5px;
+	$uni-spacing-row-base: 10px;
+	$uni-spacing-row-lg: 15px;
+	
+	/* 垂直间距 */
+	$uni-spacing-col-sm: 4px;
+	$uni-spacing-col-base: 8px;
+	$uni-spacing-col-lg: 12px;
+	
+	/* 透明度 */
+	$uni-opacity-disabled: 0.3; // 组件禁用态的透明度
+	
+	/* App主色调 */
+	$app-main-color: #1CC7BE;
+
+	/* 框体的圆角*/
+	$app-box-radius: 12rpx;
+
+	$app-image-radius: 4rpx;
+
+	/* 框体之间的距离*/
+	$app-box-margin-bottom: 16rpx;
+
+	/* 框体之间的距离*/
+	$app-box-margin-top: 16rpx;
+
+	$app-max-btn-height: 96rpx;
+
+	$app-middle-btn-height: 84rpx;
+
+	$app-small-btn-height: 72rpx;
+	
+	/* 文字基本颜色 */
+	//@mixin 进行声明 多个参数 , 分割
+	@mixin app-text-color($rgba: 1, $color: #000000){
+		color: rgba($color, $rgba);// 弱颜色
+	}

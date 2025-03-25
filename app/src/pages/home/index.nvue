@@ -1,0 +1,522 @@
+<!-- 滑动切换选项卡+吸顶演示（nvue） -->
+<template>
+  <!-- refresher-only为true代表只使用下拉刷新功能 -->
+  <!-- hide-nvue-bottom-tag必须设置为true，因为在安卓设备中，插入的swiper cell下面，不能有其他的view -->
+  <!-- @onRefresh代表监听下拉刷新事件 -->
+  <global-view bgColor="linear-gradient(to bottom, #ffffff, #FAFAFA)">
+    <z-paging
+      ref="pagePaging"
+      nvue-list-id="z-paging-nlist"
+      refresher-only
+      hide-nvue-bottom-tag
+      :enable-back-to-top="true"
+      :show-scrollbar="false"
+      @on-refresh="onRefresh"
+      @scroll="handlePagingScroll"
+    >
+      <!-- 自定义下拉刷新view(如果use-custom-refresher为true且不设置下面的slot="refresher"，此时不用获取refresherStatus，会自动使用z-paging自带的下拉刷新view) -->
+      <template #refresher="{ refresherStatus }">
+        <custom-refresher :status="refresherStatus" />
+      </template>
+      <!-- 这个cell是吸顶view上方跟随列表滚动的view(header) -->
+      <template #top>
+        <view ref="topBarRef" class="topBarRef">
+          <view class="sear-box">
+            <u-status-bar />
+            <search />
+          </view>
+          <view class="black">
+            <u-status-bar />
+            <image
+              class="black-icon"
+              src="/static/images/home/black_number.png"
+              @tap="showBlackPopup = true"
+            />
+          </view>
+        </view>
+      </template>
+      <cell>
+        <view ref="header" class="home-container">
+          <express-zone />
+          <view class="category-container">
+            <view class="tips-view" @tap="showSafetyPopup = true">
+              <image class="tips" src="/static/images/home/hot_game_tips.png" />
+              <view class="ax-box">
+                <view class="text-view">
+                  <text class="text">官方验号</text>
+                  <text class="text line">|</text>
+                  <text class="text">实名认证</text>
+                  <text class="text line">|</text>
+                  <text class="text">找回包赔</text>
+                </view>
+              </view>
+              <image
+                class="ax-icon"
+                src="/static/images/home/icon-ax-left.png"
+              />
+            </view>
+            <u-skeleton
+              rows="5"
+              :row="true"
+              :loading="!gameList.length"
+              :title="false"
+              rowsWidth="116rpx"
+              rowsHeight="116rpx"
+            >
+              <view class="hot-game">
+                <view
+                  v-for="(item, index) in gameList.slice(0, 4)"
+                  :key="index"
+                  class="hot-game-item"
+                  @tap="handleGameProduct(item)"
+                >
+                  <image class="icon" :src="item.icon"></image>
+                  <view class="name">
+                    <text class="text">{{ filterName(item.game_name) }}</text>
+                  </view>
+                  <template v-if="index <= 2">
+                    <view :class="`hot-num hot-num-${index + 1}`">
+                      <text class="text">TOP {{ index + 1 }}</text>
+                    </view>
+                  </template>
+                </view>
+                <view class="hot-game-item more end" @tap="handleMoreAccount">
+                  <template v-if="gameList.length < 7">
+                    <view class="icon-list">
+                      <image
+                        class="icon"
+                        src="/static/images/home/hot_game_more.png"
+                      />
+                    </view>
+                  </template>
+                  <template v-else>
+                    <view class="icon-list">
+                      <template
+                        v-for="(item, index) in gameList.slice(4, 8)"
+                        :key="index"
+                      >
+                        <image class="icon-cover" :src="item.icon" />
+                      </template>
+                    </view>
+                  </template>
+                  <view class="name">
+                    <text class="text">全部游戏</text>
+                  </view>
+                </view>
+              </view>
+            </u-skeleton>
+          </view>
+        </view>
+      </cell>
+      <!-- 这个cell包含了吸顶view和主体列表，其高度必须等于页面可见高度 -->
+      <cell ref="zPagingHomeRef">
+        <view class="home-content">
+          <view class="goods-list" :style="'height:' + pageHeight + 'px'">
+            <!-- 吸顶view -->
+            <!-- 注意！此处的z-tabs为独立的组件，可替换为第三方的tabs，若需要使用z-tabs，请在插件市场搜索z-tabs并引入，否则会报插件找不到的错误 -->
+            <view class="tabs-view">
+              <view ref="tabsRef" class="padding-24 tabs-box">
+                <z-tabs
+                  ref="tabs"
+                  barWidth="76rpx"
+                  barHeight="8rpx"
+                  :list="tabColumns"
+                  :current="current"
+                  :inactiveStyle="inactiveStyle"
+                  :tabsStyle="tabsStyle"
+                  :activeStyle="activeStyle"
+                  :barStyle="barStyle"
+                  @change="tabsChange"
+                />
+                <image
+                  class="icon"
+                  src="/static/images/home/hot_game_tab_icon.png"
+                  @tap="showGamePopup = true"
+                />
+              </view>
+              <view
+                class="fy-dropdown padding-24"
+                :style="`background:${fyBgColor}`"
+              >
+                <view class="fy-dropdown-box">
+                  <fy-dropdown
+                    ref="fyDropdownRef"
+                    :backgroundBoxColor="fyBgColor"
+                    :spaceBetween="true"
+                    :menuList="menuList"
+                    @change="onSortConfirm"
+                  />
+                </view>
+                <toggle-preview />
+              </view>
+            </view>
+            <view class="goods-list-content">
+              <swiper
+                class="swiper"
+                :current="current"
+                @change="swiperChange"
+                @transition="swiperTransition"
+                @animationfinish="swiperAnimationfinish"
+              >
+                <swiper-item
+                  v-for="(item, index) in tabColumns"
+                  :key="index"
+                  class="swiper-item"
+                >
+                  <!-- 这里的sticky-swiper-item-n为demo中为演示用定义的组件，列表及分页代码在sticky-swiper-item-n组件内 -->
+                  <!-- 请注意，sticky-swiper-item-n非z-paging内置组件，在自己的项目中必须自己创建，若未创建则会报组件不存在的错误 -->
+                  <sticky-swiper-item
+                    v-slot="data"
+                    :ref="(el) => (swiperItems[index] = el)"
+                    :tabIndex="index"
+                    :currentIndex="current"
+                    :queryApi="queryApi"
+                    :queryParams="queryParams"
+                  >
+                    <goods-item type="home" :product="data.data" />
+                  </sticky-swiper-item>
+                </swiper-item>
+              </swiper>
+            </view>
+          </view>
+        </view>
+      </cell>
+    </z-paging>
+    <game-popup :show="showGamePopup" @close="showGamePopup = false" />
+    <safety-popup
+      ref="safetyPopupRef"
+      :show="showSafetyPopup"
+      @close="showSafetyPopup = false"
+    />
+    <BlackNamePopup
+      ref="blackNamePopup"
+      :show="showBlackPopup"
+      @close="showBlackPopup = false"
+    />
+  </global-view>
+</template>
+
+<script setup>
+import { ref, watch, nextTick, reactive, computed } from "vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+// import CategoryNavbar from "@/components/category-navbar/index.vue";
+import Search from "@/components/search/index.vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import TogglePreview from "@/components/sticky-swiper-item/toggle-preview.vue";
+import GoodsItem from "@/components/goods-item-preview/index.vue";
+import FyDropdown from "@/components/fy-dropdown/fy-dropdown.vue";
+import ExpressZone from "./components/express-zone.vue";
+import SafetyPopup from "./components/safety-popup.vue";
+import { useProduct } from "./useProduct";
+import GamePopup from "./components/game-popup.vue";
+import { getProductList } from "@/api/product";
+import { useUserStore } from "@/stores/user";
+import { useGameStore } from "@/stores/game";
+import { SearchDropdown } from "@/utils/search-dropdown";
+import Events, { report } from "@/utils/report/report";
+import BlackNamePopup from "./components/black-name.vue";
+// import { ProductTypeEnum } from "@/enums/product";
+// import { toLogin, checkIsLogin } from "@/utils/login";
+import { filterName } from "@/utils";
+const userStore = useUserStore();
+const gameStore = useGameStore();
+import { inactiveStyle, activeStyle, barStyle } from "@/utils/operation-style";
+
+const showBlackPopup = ref(false);
+const tabsStyle = reactive({
+  width: "680rpx",
+});
+
+const queryApi = ref(getProductList);
+
+const { onSortConfirm, menuList, queryData, setDropdown } = SearchDropdown(() =>
+  onRefresh()
+);
+
+menuList.value = [
+  {
+    title: "综合排序",
+    dropdownKey: "price",
+    value: "popularity/desc",
+    options: [
+      {
+        label: "综合排序",
+        value: "popularity/desc",
+      },
+      {
+        label: "最新发布",
+        value: "created_at/desc",
+      },
+      {
+        label: "价格降序",
+        value: "product_price/desc",
+      },
+      {
+        label: "价格升序",
+        value: "product_price/asc",
+      },
+      {
+        label: "最多收藏",
+        value: "collection_number/desc",
+      },
+    ],
+  },
+  {
+    title: "账号分类",
+    dropdownKey: "classification",
+    type: "tree",
+    options: [],
+  },
+  {
+    title: "价格",
+    dropdownKey: "priceFilter",
+    type: "filter",
+    value: {
+      priceStart: "",
+      priceEnd: "",
+    },
+    options: [],
+  },
+  {
+    title: "筛选",
+    dropdownKey: "filter",
+    type: "column",
+    options: [],
+  },
+];
+// let activityList = reactive([
+//   {
+//     icon: "/static/images/home/banner-xxbb.png",
+//     title: "旭旭宝宝",
+//   },
+//   {
+//     icon: "/static/images/home/banner-szg.png",
+//     title: "沙子哥",
+//   },
+//   {
+//     icon: "/static/images/home/banner-cb.png",
+//     title: "陈伯",
+//   },
+//   {
+//     icon: "/static/images/home/banner-aq.png",
+//     title: "安全",
+//   },
+//   {
+//     icon: "/static/images/home/banner-aq2.png",
+//     title: "安全2",
+//   },
+// ]);
+
+// #ifdef APP-NVUE
+const dom = weex.requireModule("dom");
+// #endif
+
+const swiperItems = ref([]);
+const pagePaging = ref(null);
+const tabs = ref(null);
+const tabsRef = ref(null);
+const header = ref(null);
+const topBarRef = ref(null);
+const fyBgColor = ref("#fff");
+const fyDropdownRef = ref(null);
+const showGamePopup = ref(false);
+const safetyPopupRef = ref(null);
+const showSafetyPopup = ref(false);
+const zPagingHomeRef = ref(null);
+
+//页面高度
+const pageHeight = ref(0);
+//header高度
+const headerHeight = ref(0);
+//tabs组件的current值，表示当前活动的tab选项
+const current = ref(0);
+const gameList = ref([]);
+const tabColumns = ref([]);
+
+// onErrorCaptured((_error, instance) => {
+//   console.log("onErrorCaptured--------", _error, instance);
+// });
+
+onLoad(() => {
+  // 获取页面可见高度，除去header以外的高度必须等于页面可见高度！
+  // 注意：如果是自定义导航栏通过slot="top"插入的情况，这里的pageHeight.value = uni.getSystemInfoSync().windowHeight - 自定义导航栏高度。底部tabbar亦然
+  // const safeArea =
+  //   uni.getSystemInfoSync().safeArea.bottom -
+  //   uni.getSystemInfoSync().safeArea.height;
+  pageHeight.value = uni.getSystemInfoSync().windowHeight;
+  useProduct().then(({ gameListData, tabColumnsData }) => {
+    // gameStore.assembleGameForm(tabColumnsData[0].value);
+    gameList.value = gameListData;
+    tabColumns.value = tabColumnsData;
+    setPageHeight();
+  });
+});
+
+onShow(() => {
+  tabColumns.value[current.value] &&
+    gameStore.assembleGameForm(tabColumns.value[current.value].value);
+});
+
+const setPageHeight = () => {
+  nextTick(() => {
+    // 获取header的高度
+    dom.getComponentRect(header.value, (option2) => {
+      if (option2 && option2.result) {
+        headerHeight.value = option2.size.height;
+      }
+    });
+
+    // 获取header的高度
+    dom.getComponentRect(topBarRef.value, (option2) => {
+      if (option2 && option2.result) {
+        headerHeight.value = headerHeight.value + option2.size.height;
+        pageHeight.value = pageHeight.value - option2.size.height;
+      }
+    });
+    dom.getComponentRect(tabsRef.value, (option2) => {
+      if (option2 && option2.result) {
+        pageHeight.value = pageHeight.value + option2.size.height;
+        headerHeight.value = headerHeight.value + option2.size.height;
+      }
+    });
+  });
+};
+
+const handlePagingScroll = (e) => {
+  // console.log(-e.contentOffset.y, headerHeight.value - 60);
+  // console.log(fyDropdownRef.value);
+  fyDropdownRef.value && fyDropdownRef.value.close();
+  if (-e.contentOffset.y >= headerHeight.value + 20 && headerHeight.value) {
+    fyBgColor.value = "rgba(0,0,0,0)";
+  } else {
+    fyBgColor.value = "#fff";
+  }
+};
+
+const handleGameProduct = (item) => {
+  userStore.setGameHistory(item);
+  uni.navigateTo({
+    url: `/pages/goods/list?id=${item.id}`,
+  });
+};
+
+const onRefresh = () => {
+  // 触发了下拉刷新，通知当前tabIndex对应子组件的下拉刷新
+  swiperItems.value[current.value].reload(() => {
+    // 当当前显示的列表刷新结束，结束当前页面的刷新状态
+    pagePaging.value.endRefresh();
+  });
+};
+
+// swiper change时触发
+const swiperChange = (e) => {
+  // #ifndef APP-PLUS || H5 || MP-WEIXIN || MP-QQ
+  const tempCurrent = e.target.current || e.detail.current;
+  tabsChange(tempCurrent);
+  // #endif
+};
+
+// tabs通知swiper切换
+const tabsChange = (index) => {
+  current.value = index;
+};
+
+// swiper滑动中
+const swiperTransition = (e) => {
+  tabs.value.setDx(e.detail.dx);
+};
+
+// swiper滑动结束
+const swiperAnimationfinish = (e) => {
+  current.value = e.detail.current;
+  tabs.value.unlockDx();
+};
+
+// 设置子组件嵌套list父容器支持swiper-list吸顶滚动效果的方法
+const setListSpecialEffects = () => {
+  nextTick(() => {
+    swiperItems.value[current.value] &&
+      swiperItems.value[current.value].setSpecialEffects(headerHeight.value);
+  });
+};
+
+const handleMoreAccount = () => {
+  report(Events.HOME_ALL_GAMES);
+  uni.switchTab({
+    url: "/pages/buy-account/index",
+  });
+};
+
+const queryParams = computed(() => {
+  const orderBy = queryData.orderByKey.split("/");
+
+  return {
+    showLoading: true,
+    orderBy: orderBy[1],
+    orderByKey: orderBy[0],
+    perPage: 20,
+    gameId: tabColumns.value[current.value].value,
+    uid: userStore.userInfo?.uid,
+    ...queryData.filter,
+  };
+});
+
+// const handleGoodDetail = (data) => {
+//   uni.navigateTo({
+//     url: `/pages/goods/detail?product_id=${data.product_id}`,
+//   });
+// };
+
+const getUseSearchDropdown = async () => {
+  setDropdown(tabColumns.value[current.value]?.value);
+};
+
+watch(
+  () => current.value,
+  async () => {
+    setListSpecialEffects();
+    getUseSearchDropdown();
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => tabColumns.value,
+  () => {
+    swiperItems.value[current.value] &&
+      swiperItems.value[current.value].reload();
+    getUseSearchDropdown();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => headerHeight.value,
+  () => {
+    setListSpecialEffects();
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => userStore.zPagingTo,
+  (val) => {
+    pagePaging.value.scrollIntoViewByView(zPagingHomeRef.value);
+  },
+  { deep: true }
+);
+</script>
+
+<style lang="scss">
+@import "./index.scss";
+
+.swiper,
+.swiper-item,
+.swiper-item-content {
+  flex: 1;
+}
+.swiper-item {
+  padding: 0 12rpx;
+}
+</style>

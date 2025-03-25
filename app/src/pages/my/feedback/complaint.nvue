@@ -1,0 +1,261 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#F7F9FA"
+        title="投诉服务"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+      </u-navbar>
+    </template>
+
+    <view class="content">
+      <view class="form">
+        <view class="title">
+          <text class="text">填写投诉信息</text>
+          <text class="require">*</text>
+        </view>
+        <view class="form-item">
+          <view class="form-lable">
+            <text class="text">投诉对象</text>
+          </view>
+          <view class="form-fields" @click="handleShowUser">
+            <u--input
+              v-model="formData.defendant_name"
+              disabled
+              disabledColor="#f4f5f6"
+              placeholder="请选择"
+              border="none"
+              suffixIcon="arrow-right"
+              :suffixIconStyle="{ color: '#B8B8B8' }"
+            ></u--input>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-lable">
+            <text class="text">投诉原因</text>
+          </view>
+          <view class="form-fields" @click="handleShowType">
+            <u--input
+              v-model="formData.feedback_type_label"
+              disabled
+              disabledColor="#f4f5f6"
+              placeholder="请选择"
+              border="none"
+              suffixIcon="arrow-right"
+              :suffixIconStyle="{ color: '#B8B8B8' }"
+            ></u--input>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-lable">
+            <text class="text">投诉描述</text>
+          </view>
+          <view class="form-fields" style="padding: 18rpx 10rpx">
+            <u--textarea
+              v-model="formData.problem"
+              placeholder="请尽可能的描述投诉前因后果，以便我们结合聊天记录了解详情"
+              border="none"
+              height="290rpx"
+              count
+              :clearable="true"
+              :maxlength="500"
+              :placeholderStyle="{ 'font-size': '32rpx' }"
+            ></u--textarea>
+          </view>
+        </view>
+      </view>
+      <view class="foot">
+        <view class="btn" @click="handleSubmit">
+          <text class="text">提交</text>
+        </view>
+      </view>
+    </view>
+    <reason-popup
+      ref="reasonRef"
+      title="选择投诉原因"
+      :options="feedBackData.feedbackTypeList"
+      @change="handleSelectType"
+    />
+    <user-popup ref="userRef" @change="handleSelectUser" />
+  </global-view>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import GlobalView from "@/components/global-view/index.vue";
+import ReasonPopup from "./components/reason-popup.vue";
+import UserPopup from "./components/user-popup.vue";
+import { fetchFeedback } from "@/api/user";
+import { Feedback } from "./js/feedback";
+import { useUserStore } from "@/stores/user";
+import Events, { report } from "@/utils/report/report";
+
+const userStore = useUserStore();
+
+const { feedBackData, fetchFeedbackTypeList } = Feedback();
+
+const reasonRef = ref();
+const userRef = ref();
+const formData = reactive({
+  feedback_type: "",
+  feedback_type_label: "",
+  defendant_uid: "",
+  defendant_name: "",
+  defendant_type: "",
+  problem: "",
+});
+
+onLoad(() => {
+  fetchFeedbackTypeList({
+    submit_type: 2,
+  });
+});
+
+const handleShowType = () => {
+  reasonRef.value?.open();
+};
+const handleSelectType = (value, data) => {
+  if (data.label) {
+    formData.feedback_type = value;
+    formData.feedback_type_label = data.label;
+  } else {
+    formData.feedback_type = "";
+    formData.feedback_type_label = "";
+  }
+};
+
+const handleSelectUser = (data: {
+  staff_type: number;
+  uid: string;
+  merchant_name: string;
+}) => {
+  formData.defendant_type = data.staff_type;
+  formData.defendant_uid = data.uid;
+  formData.defendant_name = data.merchant_name;
+};
+
+const handleShowUser = () => {
+  userRef.value?.open();
+};
+
+const handleSubmit = async () => {
+  if (!formData.defendant_uid) {
+    return uni.$main.toast("请选择投诉对象");
+  }
+  if (!formData.feedback_type) {
+    return uni.$main.toast("请选择投诉原因");
+  }
+  if (!formData.problem) {
+    return uni.$main.toast("请填写投诉描述");
+  }
+  if (formData.problem.length < 15) {
+    return uni.$main.toast("请输入至少15个字");
+  }
+
+  report(Events.MY_COMPLAINT_SUBMIT);
+
+  const res = await fetchFeedback({
+    submit_type: 2,
+    feedback_type: formData.feedback_type,
+    problem: formData.problem,
+    problem_uid: userStore.userInfo.uid,
+    defendant_type: formData.defendant_type,
+    defendant_uid: formData.defendant_uid,
+  }).catch(() => {
+    uni.$main.toast("反馈失败，请稍候再试");
+  });
+  if (res && res.feedback_id) {
+    uni.$main.toast("感谢您反馈，我们会尽快处理！");
+    uni.$u.sleep(500).then(() => {
+      uni.redirectTo({
+        url: "/pages/my/feedback/complaint-list",
+      });
+    });
+  } else {
+    uni.$main.toast("反馈失败，请稍候再试");
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.content {
+  margin: 24rpx;
+
+  .title {
+    margin-bottom: 16rpx;
+    @include flex(row);
+
+    .text {
+      font-weight: 500;
+      font-size: 32rpx;
+      color: #1a1a1a;
+    }
+    .require {
+      color: #ff0000;
+    }
+  }
+
+  .form-item {
+    padding: 24rpx;
+    margin-bottom: 16rpx;
+    background-color: #fff;
+    border-radius: 12rpx 12rpx 12rpx 12rpx;
+
+    .form-lable {
+      margin-bottom: 20rpx;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #1a1a1a;
+        line-height: 38rpx;
+      }
+    }
+
+    .form-fields {
+      padding: 24rpx;
+      background: #f4f5f6;
+      border-radius: 8rpx 8rpx 8rpx 8rpx;
+      line-height: 50rpx;
+    }
+  }
+
+  .foot {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 24rpx;
+    background-color: #fff;
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 702rpx;
+      height: 96rpx;
+      background: #1cc7be;
+      border-radius: 12rpx 12rpx 12rpx 12rpx;
+
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+    }
+  }
+}
+::v-deep .content .u-textarea {
+  background: transparent !important;
+}
+
+::v-deep .content .u-textarea .u-textarea__count {
+  background: transparent !important;
+}
+
+::v-deep .content .u-radio__text {
+  font-weight: 500;
+}
+</style>

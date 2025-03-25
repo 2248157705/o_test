@@ -1,0 +1,254 @@
+<!-- 自定义导航栏演示 -->
+<!--  此demo使用了uView的Navbar 自定义导航栏 https://uviewui.com/components/navbar.html -->
+<template>
+  <global-view :showBar="false" bgColor="#F7F9FA">
+    <view class="content-view">
+      <view class="content" :style="`height: ${pageHeight}px`">
+        <sticky-swiper-item
+          ref="paging"
+          :showSlotTop="true"
+          :queryApi="queryApi"
+          :queryParams="queryParams"
+          :showEmptyReload="true"
+          @onEmptyReloadClick="handleEmptyReloadClick"
+          emptyText="暂无估价记录"
+          emptyReloadText="去估价"
+        >
+          <template #top>
+            <u-navbar
+              bgColor="#ffffff"
+              title="估价记录"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+            />
+          </template>
+          <template v-slot:default="{ data }">
+            <view class="goods-container" @click="handleDetail(data)">
+              <!-- 如果希望其他view跟着页面滚动，可以放在z-paging标签内 -->
+              <text class="time">{{
+                formatDate(data.created_at, "MM-DD HH:mm")
+              }}</text>
+              <view class="goods-item-view">
+                <text class="notify">估价通知</text>
+                <view class="item-msg">
+                  <view class="msg-inter">
+                    <text class="text text1">估价ID：</text>
+                    <text class="text text2">{{ data.estimate_id }}</text>
+                  </view>
+                  <view class="msg-inter">
+                    <text class="text text1">游戏名称：</text>
+                    <text class="text text2">{{ data.game_name }}</text>
+                  </view>
+                  <view class="msg-inter">
+                    <text class="text text1">估价时间：</text>
+                    <text class="text text2">{{
+                      formatDate(data.created_at, "YYYY-MM-DD HH:mm:ss")
+                    }}</text>
+                  </view>
+                </view>
+              </view>
+              <view class="operation">
+                <view class="btn-box">
+                  <view class="btn buy">
+                    <text class="text">查看详情</text>
+                  </view>
+                  <image
+                    class="icon"
+                    src="/static/images/common/icon_right.png"
+                  />
+                </view>
+              </view>
+            </view>
+          </template>
+        </sticky-swiper-item>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, watch, computed } from "vue";
+import { getEstimateProductList } from "@/api/product";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import { formatDate } from "@/utils";
+
+const paging = ref(null);
+const pageHeight = ref(uni.getSystemInfoSync().windowHeight);
+
+const queryApi = ref(getEstimateProductList);
+
+const queryParams = computed(() => {
+  return {
+    perPage: 20,
+  };
+});
+
+const handleEmptyReloadClick = (e) => {
+  e(false);
+  uni.redirectTo({
+    url: "/pages/sell-account/sell-game-enter/index?title=一键估价&type=4",
+  });
+};
+
+const handleDetail = (data) => {
+  if (data.estimate_type == "2") {
+    uni.navigateTo({
+      url: `/pages/valuation/result?id=${data.estimate_id}&gameId=${data.game_id}`,
+    });
+  } else {
+    uni.navigateTo({
+      url: `/pages/valuation/detail?id=${data.estimate_id}`,
+    });
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+
+.popup {
+  flex: 1;
+  @include flex(column);
+  /* max-height: max-content; */
+  .popup-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32rpx;
+    .text {
+      color: #1a1a1a;
+      font-size: 32rpx;
+      font-weight: 400;
+    }
+  }
+  .btn-box {
+    @include flex(row);
+    justify-content: space-between;
+    .btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 236rpx;
+      height: 68rpx;
+      border-radius: 8rpx;
+      .text {
+        font-weight: 500;
+        font-size: 28rpx;
+        color: #ffffff;
+      }
+      &.cancel {
+        background-color: #f4f5f6;
+        .text {
+          color: #606060;
+        }
+      }
+      &.confirm {
+        background-color: #1cc7be;
+      }
+    }
+  }
+}
+.view-container {
+  @include flex(column);
+  background-color: #fff;
+  flex: 1;
+  .dropdown {
+    flex: 1;
+    display: flex;
+    padding: 0 24rpx;
+  }
+}
+
+.goods-container {
+  flex: 1;
+  @include flex(column);
+  justify-content: center;
+  margin-top: 24rpx;
+  padding: 0 24rpx;
+  .time {
+    font-weight: 400;
+    font-size: 28rpx;
+    color: #afafaf;
+    text-align: center;
+    margin: 24rpx 0;
+  }
+  .goods-item-view {
+    flex: 1;
+    background-color: #fff;
+    border-radius: 4rpx;
+    padding: 24rpx;
+    .notify {
+      font-weight: bold;
+      font-size: 32rpx;
+      color: #1a1a1a;
+      margin-bottom: 12rpx;
+    }
+    .item-msg {
+      @include flex(column);
+      .msg-inter {
+        @include flex(row);
+        margin-bottom: 12rpx;
+        .text {
+          font-weight: 500;
+          font-size: 28rpx;
+          color: #1a1a1a;
+          line-height: 42rpx;
+          &.text1 {
+            color: #606060;
+            margin-right: 24rpx;
+          }
+        }
+      }
+    }
+  }
+  .operation {
+    flex: 1;
+    padding: 24rpx;
+    padding-bottom: 0;
+    @include flex(row);
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0;
+    background-color: #fff;
+    border-top: 1rpx solid #f4f5f6;
+    border-bottom-left-radius: 4rpx;
+    border-bottom-right-radius: 4rpx;
+    .time {
+      font-weight: 500;
+      font-size: 24rpx;
+      color: #1a1a1a;
+    }
+    .btn-box {
+      @include flex(row);
+      justify-content: space-between;
+      align-items: center;
+      flex: 1;
+      .icon {
+        width: 28rpx;
+        height: 28rpx;
+        opacity: 0.4;
+      }
+      .btn {
+        padding: 22rpx 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .text {
+          font-weight: 400;
+          font-size: 22rpx;
+        }
+        &.buy {
+          .text {
+            font-weight: 400;
+            font-size: 24rpx;
+            color: #afafaf;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

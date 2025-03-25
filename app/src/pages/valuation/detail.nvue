@@ -1,0 +1,73 @@
+<template>
+  <global-view bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#F7F9FA"
+        title="估价信息"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="detail-box">
+      <view class="valuation-num">
+        <text class="title">预估市场价</text>
+        <text class="num">{{
+          product.estimated_price
+            ? "¥" + product.estimated_price
+            : "估价中，请耐心等候"
+        }}</text>
+      </view>
+      <view v-if="showDetail" class="valuation-msg">
+        <goods-game-info :product="product" :type="ProductTypeEnum.VALUATION" />
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { getEstimateProductInfo } from "@/api/product";
+import GlobalView from "@/components/global-view/index.vue";
+import GoodsGameInfo from "@/pages/goods/components/goods-game-info.vue";
+import { ProductTypeEnum } from "@/enums/product";
+import { useUserStore } from "@/stores/user";
+const userStore = useUserStore();
+const product = ref({});
+const showDetail = ref(false);
+onLoad(async (params) => {
+  const { data } = await getEstimateProductInfo(params.id);
+  product.value = data;
+  product.value.goods_info = JSON.stringify(product.value.goods_info);
+  showDetail.value = true;
+});
+</script>
+
+<style lang="scss">
+.detail-box {
+  padding: 24rpx;
+  .valuation-num {
+    background-color: #fff;
+    border-radius: $app-box-radius;
+    margin-bottom: $app-box-margin-bottom;
+    padding: 40rpx 24rpx;
+    .title {
+      font-weight: 600;
+      font-size: 32rpx;
+      color: #1a1a1a;
+      margin-bottom: $app-box-margin-bottom;
+    }
+    .num {
+      font-family: Barlow-ExtraBold;
+      font-weight: 800;
+      font-size: 56rpx;
+      color: $app-main-color;
+    }
+  }
+  .valuation-msg {
+    background-color: #fff;
+    border-radius: $app-box-radius;
+  }
+}
+</style>

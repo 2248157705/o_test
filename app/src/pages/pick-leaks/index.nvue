@@ -1,0 +1,314 @@
+<template>
+  <global-view
+    :showBar="false"
+    :showBgImage="true"
+    bgImage="/static/images/sell/leaks_bg_1.png"
+  >
+    <template #bgImage>
+      <view class="bg-view"></view>
+    </template>
+    <view class="leak-view">
+      <view :style="`height: ${height}px`">
+        <sticky-swiper-item
+          ref="pagingRef"
+          direction="row"
+          :cellStyle="cellStyle"
+          :showSlotTop="true"
+          :queryApi="queryApi"
+          :queryParams="queryParams"
+        >
+          <template #top>
+            <u-navbar
+              bgColor="rgba(0,0,0,0)"
+              :placeholder="true"
+              :autoBack="true"
+              :safeAreaInsetTop="true"
+              height="66px"
+            >
+              <template #left>
+                <view
+                  style="
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                  "
+                >
+                  <image
+                    style="width: 48rpx; height: 48rpx; margin-right: 12rpx"
+                    src="/static/images/common/icon_left_white.png"
+                  />
+                  <image
+                    style="width: 218rpx; height: 52rpx"
+                    src="/static/images/sell/icon_navbar_title.png"
+                  />
+                </view>
+              </template>
+            </u-navbar>
+            <view class="top-content">
+              <text class="tips">超高性价比·多人抢购·买到就赚到！</text>
+              <view class="search">
+                <search
+                  borderColor="rgba(255,255,255,0.9)"
+                  bgColor="rgba(255,255,255,0.9)"
+                  searchIcon="/static/images/sell/icon_search.png"
+                  :disabled="false"
+                  :searchVal="searchKey"
+                  :searchBtnStyle="searchBtnStyle"
+                  :inputStyle="{
+                    backgroundColor: 'rgba(255,255,255,0)',
+                    paddingRight: '190rpx',
+                  }"
+                  :searchBoxStyle="{
+                    padding: '0',
+                  }"
+                  :placeholderStyle="{
+                    fontWeight: '400',
+                    fontSize: '12px',
+                    color: '#AFAFAF',
+                  }"
+                  @search="handleSearch"
+                />
+              </view>
+            </view>
+            <view class="fy-dropdown">
+              <fy-dropdown
+                backgroundBoxColor="#f8f8f8"
+                :spaceBetween="true"
+                :menuList="menuList"
+                :closeModal="clickData.checked"
+                @change="onSortConfirm"
+              />
+            </view>
+          </template>
+          <template v-slot:default="data">
+            <goods-item
+              type="home"
+              labelImage="/static/images/sell/icon_special_title_1.png"
+              :product="data.data"
+              priceColor="#fc2a35"
+            />
+            <!-- <view class="leak-list-view">
+              <leak-item :product="data.data" />
+            </view> -->
+          </template>
+        </sticky-swiper-item>
+      </view>
+    </view>
+    <view style="position: fixed">
+      <game-popup :show="clickData.checked" @close="clickData.checked = false">
+        <RecommendGameList
+          searchColor="#FD505E"
+          :canDetect="1"
+          @handleSelect="handleSelect"
+        >
+        </RecommendGameList>
+      </game-popup>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, reactive, computed } from "vue";
+import StickySwiperItem from "@/components/sticky-swiper-item/index.vue";
+import { getProductList } from "@/api/product";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import Search from "@/components/search/index.vue";
+import LeakItem from "./components/leak-item.vue";
+import GlobalView from "@/components/global-view/index.vue";
+import FyDropdown from "@/components/fy-dropdown/fy-dropdown.vue";
+import { SearchDropdown } from "@/utils/search-dropdown";
+import { useSearchDropdown } from "@/pages/goods/js/useSearchDropdown";
+import GoodsItem from "@/components/goods-item/index.vue";
+import RecommendGameList from "@/components/recommend-game-list/index.vue";
+import GamePopup from "@/components/popup/index.vue";
+import { ProductTypeEnum } from "@/enums/product";
+import { filterName } from "@/utils";
+
+const queryApi = ref(getProductList);
+const pagingRef = ref(null);
+const height = uni.getSystemInfoSync().windowHeight;
+const searchBtnStyle = reactive({
+  backgroundColor: "#FD5C46",
+  height: "56rpx",
+  top: "8rpx",
+  right: "9rpx",
+});
+const cellStyle = reactive({
+  backgroundColor: "#F8F8F8",
+  padding: "0 24rpx",
+});
+const { onSortConfirm, menuList, queryData, gameId, clickData } =
+  SearchDropdown(() => {
+    pagingRef.value.reload();
+  });
+menuList.value = [
+  {
+    title: "综合排序",
+    dropdownKey: "price",
+    value: "popularity/desc",
+    options: [
+      {
+        label: "综合排序",
+        value: "popularity/desc",
+      },
+      {
+        label: "最新发布",
+        value: "created_at/desc",
+      },
+      {
+        label: "价格降序",
+        value: "product_price/desc",
+      },
+      {
+        label: "价格升序",
+        value: "product_price/asc",
+      },
+      {
+        label: "最多收藏",
+        value: "collection_number/desc",
+      },
+    ],
+  },
+  {
+    title: "游戏",
+    dropdownKey: "click",
+    type: "gamePopup",
+    custom: true,
+  },
+  {
+    title: "价格",
+    dropdownKey: "priceFilter",
+    type: "filter",
+    value: {
+      priceStart: "",
+      priceEnd: "",
+    },
+    options: [],
+  },
+  {
+    title: "筛选",
+    dropdownKey: "filter",
+    type: "column",
+    disabled: true,
+    toast: "请选择游戏",
+    options: [],
+  },
+  {
+    title: "重置",
+    dropdownKey: "click",
+    type: "reset",
+    options: [],
+  },
+];
+
+const searchKey = ref(null);
+const queryParams = computed(() => {
+  const orderBy = queryData.orderByKey.split("/");
+  const param = {};
+  if (gameId.value) {
+    param.gameId = gameId.value;
+  }
+  return {
+    ...param,
+    perPage: 20,
+    orderBy: orderBy[1],
+    orderByKey: orderBy[0],
+    searchKey: searchKey.value,
+    isDetect: 1,
+    showLoading: true,
+    ...queryData.filter,
+  };
+});
+
+const handleBack = () => {
+  uni.navigateBack();
+};
+
+onLoad(async (data) => {
+  if (data.id) {
+    queryParams.value.gameId = data.id;
+    gameId.value = data.id;
+  }
+
+  if (data.searchKey) {
+    searchKey.value = data.searchKey;
+  }
+});
+
+onShow(() => {
+  if (uni.getStorageSync("searchKey")) {
+    searchKey.value = uni.getStorageSync("searchKey");
+    pagingRef.value && pagingRef.value.reload();
+    uni.removeStorageSync("searchKey");
+  }
+});
+
+const handleSearch = (search) => {
+  searchKey.value = search;
+  pagingRef.value.reload();
+};
+
+const handleSelect = async (item) => {
+  gameId.value = item.id;
+  clickData.checked = false;
+  const filterList = await useSearchDropdown(item.id);
+  menuList.value[1].title = filterName(item.game_name, 4);
+  menuList.value[menuList.value.length - 2].options = filterList;
+  menuList.value[menuList.value.length - 2].disabled = false;
+  pagingRef.value.reload();
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+.bg-view {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1500rpx;
+  background-color: #f8f8f8;
+  top: 400rpx;
+}
+.leak-view {
+  @include flex(column);
+
+  flex: 1;
+  .top-content {
+    @include flex(column);
+    flex: 1;
+    padding: 0 24rpx;
+    .tips {
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #ffffff;
+      margin-bottom: 16rpx;
+      color: #fff;
+      margin-left: 24rpx;
+    }
+    .search {
+      @include flex(row);
+      flex: 1;
+      align-items: center;
+      .left {
+        margin-right: 24rpx;
+      }
+    }
+  }
+  .fy-dropdown {
+    padding: 24rpx;
+    padding-bottom: 0;
+    background-color: #f8f8f8;
+    border-top-left-radius: 24rpx;
+    border-top-right-radius: 24rpx;
+    margin-top: 40rpx;
+  }
+  .leak-list-view {
+    background-color: #fff;
+    width: 344rpx;
+    height: 406rpx;
+    padding: 16rpx;
+    border-radius: 12rpx;
+    margin-top: 24rpx;
+  }
+}
+</style>

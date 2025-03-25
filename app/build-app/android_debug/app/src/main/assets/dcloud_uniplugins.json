@@ -1,0 +1,59 @@
+{
+  "nativePlugins": [
+    {
+      "hooksClass": "com.uniplugin_rangersapplog.AppLogAppProxy",
+      "plugins": [
+        {
+          "type": "module",
+          "name": "RangersAppLogUniPluginCN",
+          "class": "com.uniplugin_rangersapplog.AppLogModule"
+        }
+      ]
+    },
+    {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "BuglyModule",
+          "class": "io.dcloud.uniplugin_bugly.BuglyModule"
+        }
+      ]
+    },
+    {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "TestModule",
+          "class": "io.dcloud.uniplugin.TestModule"
+        }
+      ]
+    },
+    {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "WalleModule",
+          "class": "io.dcloud.uniplugin_walle.WalleModule"
+        }
+      ]
+    },
+    {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "OpenInstallModule",
+          "class": "io.openinstall.dcloud.OpenInstallModule"
+        }
+      ]
+    },
+    {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "NIMUniPlugin-PluginModule",
+          "class": "com.netease.nimlib.uniapp.push.PushModule"
+        }
+      ]
+    }
+  ]
+}

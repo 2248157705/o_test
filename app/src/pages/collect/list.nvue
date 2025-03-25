@@ -1,0 +1,8 @@
+<template>
+  <global-view> 收藏列表页 </global-view>
+</template>
+
+<script setu lang="ts"></script>
+<style lang="scss" scoped>
+@import "@/static/style/customicons.scss";
+</style>

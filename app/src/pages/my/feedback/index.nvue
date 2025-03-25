@@ -1,0 +1,122 @@
+<template>
+  <GlobalView bgColor="#F7F9FA">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="投诉与反馈"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      >
+        <template #right>
+          <text class="nav-text" @click="navigatorToComplaintList"
+            >投诉记录</text
+          >
+        </template>
+      </u-navbar>
+    </template>
+
+    <view class="content">
+      <view class="cell-group">
+        <view class="cell-item" @click="navigatorToComplaint">
+          <view class="title">
+            <text class="text">投诉服务</text>
+            <u-icon
+              name="arrow-right"
+              size="32rpx"
+              bold
+              color="#AFAFAF"
+            ></u-icon>
+          </view>
+          <view class="label">
+            <text class="text">交易投诉、售后投诉</text>
+          </view>
+        </view>
+
+        <view class="cell-item" @click="navigateToFeedback">
+          <view class="title">
+            <text class="text">意见反馈</text>
+            <u-icon
+              name="arrow-right"
+              size="32rpx"
+              bold
+              color="#AFAFAF"
+            ></u-icon>
+          </view>
+          <view class="label">
+            <text class="text">产品功能建议、吐槽</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </GlobalView>
+</template>
+
+<script setup lang="ts">
+import { reactive, computed, watch, ref } from "vue";
+import GlobalView from "@/components/global-view/index.vue";
+import Events, { report } from "@/utils/report/report";
+
+const navigateToFeedback = () => {
+  report(Events.MY_FEEDBACK);
+  uni.navigateTo({
+    url: "/pages/my/feedback/feedback",
+  });
+};
+
+const navigatorToComplaint = () => {
+  report(Events.MY_COMPLAINT);
+  uni.navigateTo({
+    url: "/pages/my/feedback/complaint",
+  });
+};
+
+const navigatorToComplaintList = () => {
+  uni.navigateTo({
+    url: "/pages/my/feedback/complaint-list",
+  });
+};
+</script>
+
+<style lang="scss" scoped>
+.nav-text {
+  font-weight: 400;
+  font-size: 28rpx;
+  color: #1a1a1a;
+}
+
+.content {
+  margin: 24rpx;
+
+  .cell-group {
+    .cell-item {
+      margin-bottom: 16rpx;
+      padding: 40rpx 24rpx;
+      background: #ffffff;
+      box-shadow: inset 0rpx -1rpx 0rpx 0rpx #f4f5f6;
+      border-radius: 12rpx 12rpx 12rpx 12rpx;
+    }
+
+    .title {
+      margin-bottom: 16rpx;
+      @include flex(row);
+      align-items: center;
+      justify-content: space-between;
+
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #1a1a1a;
+      }
+    }
+
+    .label {
+      .text {
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #606060;
+      }
+    }
+  }
+}
+</style>

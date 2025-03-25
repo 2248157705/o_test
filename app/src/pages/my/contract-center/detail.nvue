@@ -1,0 +1,175 @@
+<template>
+  <global-view bgColor="#FFFFFF">
+    <template #bar>
+      <u-navbar
+        bgColor="#ffffff"
+        title="签署合同"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="contract-center">
+      <view class="contract-item">
+        <view class="msg-item">
+          <text class="title text">订单编号</text>
+          <text class="text">{{ contractData?.order_id }}</text>
+        </view>
+        <view class="msg-item">
+          <text class="title text">商品编号</text>
+          <text class="text">{{ contractData?.product_id }}</text>
+        </view>
+        <view class="msg-item">
+          <text class="title text">交易账户</text>
+          <text class="text">{{ contractData?.product_account }}</text>
+        </view>
+        <view class="msg-item">
+          <text class="title text">游戏</text>
+          <text class="text">{{ contractData?.game_name }}</text>
+        </view>
+      </view>
+
+      <view class="contract-item">
+        <view class="msg-item">
+          <text class="title text">卖方</text>
+          <text class="text">{{ contractData?.seller_name }}</text>
+        </view>
+        <view class="msg-item">
+          <text class="title text">买方</text>
+          <text class="text">{{ contractData?.buyer_name }}</text>
+        </view>
+        <view class="msg-item">
+          <text class="title text">发起时间</text>
+          <text class="text">{{ formatDate(contractData?.created_at) }}</text>
+        </view>
+        <view class="msg-item">
+          <text class="title text">签署时间</text>
+          <text class="text">{{ formatDate(contractData?.created_at) }}</text>
+        </view>
+      </view>
+      <template v-if="contractData?.sign_type">
+        <view
+          class="contract-sign-btn check"
+          @tap="handleSign({ title: '合同预览', type: ContractUrlType.H5 })"
+        >
+          <text class="text">预览</text>
+        </view>
+      </template>
+      <template v-else>
+        <view
+          style="
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+          "
+        >
+          <view
+            class="contract-sign-btn"
+            style="width: 300rpx"
+            @tap="handleSign({ title: '签署合同', type: ContractUrlType.H5 })"
+          >
+            <text class="text">网页签署</text>
+          </view>
+          <view
+            class="contract-sign-btn"
+            style="width: 300rpx"
+            @tap="handleSign({ title: '签署合同', type: ContractUrlType.MP })"
+          >
+            <text class="text">小程序签署</text>
+          </view>
+        </view>
+      </template>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref, computed } from "vue";
+import GlobalView from "@/components/global-view/index.vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import { getContractInfo } from "@/api/user";
+import {
+  openContractUrl,
+  ContractUrlType,
+} from "@/components/im/chat/message/card/js/nim";
+import dayjs from "dayjs";
+
+const contractData = ref(null);
+onLoad(async (param) => {
+  if (param.signId) {
+    const data = await getContractInfo(param.signId);
+    contractData.value = data;
+  }
+});
+
+onShow(async () => {
+  if (contractData.value?.sign_task_id) {
+    const data = await getContractInfo(contractData.value.sign_task_id);
+    contractData.value = data;
+  }
+});
+
+const formatDate = computed(() => {
+  return (time) => {
+    if (!time) return "";
+    return dayjs.unix(time).format("YYYY-MM-DD");
+  };
+});
+
+const handleSign = async (opts) => {
+  if (contractData.value?.sign_task_id) {
+    openContractUrl(opts.type, contractData.value.sign_task_id);
+  }
+};
+</script>
+<style lang="scss" scoped>
+.contract-center {
+  @include flex(column);
+  background-color: #fff;
+  flex: 1;
+  padding: 0 24rpx;
+  padding-bottom: 0;
+  .contract-item {
+    @include flex(column);
+    padding: 24rpx;
+    background-color: #f4f5f6;
+    margin-top: 24rpx;
+    padding-bottom: 0;
+    .msg-item {
+      @include flex(row);
+      align-items: center;
+      margin-bottom: 24rpx;
+      .text {
+        font-weight: 400;
+        font-size: 32rpx;
+        color: #1a1a1a;
+        &.title {
+          font-weight: 600;
+          width: 200rpx;
+        }
+      }
+    }
+  }
+  .contract-sign-btn {
+    height: 96rpx;
+    background-color: #1cc7be;
+    border-radius: 8rpx;
+    margin-top: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .text {
+      font-weight: 500;
+      font-size: 32rpx;
+      color: #ffffff;
+    }
+    &.check {
+      background-color: #fff;
+      border: 2rpx solid #1cc7be;
+      .text {
+        color: #1cc7be;
+      }
+    }
+  }
+}
+</style>

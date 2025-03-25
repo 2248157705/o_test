@@ -1,0 +1,214 @@
+{
+  "gameFormId": null,
+  "gameFormItemParent": [],
+  "gameFormData": [
+    {
+      "type": "input",
+      "parentId": 2,
+      "label": "商品价格",
+      "errTips": "商品价格不能为空",
+      "placeholder": "请输入商品价格",
+      "name": "product_price",
+      "value": "",
+      "desc": "",
+      "inputType": "digit",
+      "required": true,
+      "computed": true,
+      "rules": {
+        "rulesName": "rulePrice",
+        "ruleErrMsg": "价格应在20～999999元之间，最多保留两位小数"
+      }
+    },
+    {
+      "type": "textarea",
+      "parentId": 2,
+      "label": "账号备注",
+      "errTips": "账号备注不能为空",
+      "placeholder": "请填写双方协商好的账号资源或账号绑定情况。",
+      "name": "product_desc",
+      "maxWord": 300,
+      "value": "",
+      "desc": "",
+      "inputType": "text",
+      "flexColumn": true,
+      "required": false
+    },
+    {
+      "type": "input",
+      "parentId": 2,
+      "label": "游戏账号",
+      "errTips": "游戏账号不能为空",
+      "placeholder": "请输入游戏账号",
+      "name": "product_account",
+      "value": "",
+      "desc": "",
+      "required": true
+    },
+    {
+      "type": "radio",
+      "parentId": 3,
+      "label": "账号来源",
+      "required": true,
+      "name": "account_source",
+      "value": "",
+      "options": [
+        {
+          "value": "self",
+          "label": "自己注册"
+        },
+        {
+          "value": "platform",
+          "label": "平台购买"
+        },
+        {
+          "value": "other",
+          "label": "其他平台购买"
+        }
+      ],
+      "operation": "select"
+    },
+    {
+      "type": "uploadImage",
+      "label": "二次实名截图",
+      "parentId": 3,
+      "subLabel": "",
+      "name": "real",
+      "value": [],
+      "desc": "",
+      "required": true,
+      "max": 1,
+      "multiple": true,
+      "flexColumn": true,
+      "invisible": true,
+      "noIsGoodsInfo": true,
+      "visibleId": ["self", "platform", "other"],
+      "errTips": "请上传二次实名截图",
+      "placeholder": "请上传二次实名截图",
+      "previewImage": "https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon_guarantee_pic1.png",
+      "previewImageViewUrl": "https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon_guarantee_preview1.png"
+    },
+    {
+      "type": "uploadImage",
+      "label": "合同截图",
+      "parentId": 3,
+      "subLabel": "",
+      "name": "contract",
+      "value": [],
+      "desc": "",
+      "required": true,
+      "max": 1,
+      "multiple": true,
+      "flexColumn": true,
+      "invisible": true,
+      "noIsGoodsInfo": true,
+      "visibleId": ["platform"],
+      "errTips": "请上传合同截图",
+      "placeholder": "请上传合同截图",
+      "previewImage": "https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon_guarantee_pic2.png",
+      "previewImageViewUrl": "https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon_guarantee_preview2.png"
+    },
+    {
+      "type": "uploadImage",
+      "label": "网购或外卖订单截图",
+      "parentId": 3,
+      "subLabel": "",
+      "name": "other_order",
+      "value": [],
+      "desc": "",
+      "required": true,
+      "max": 1,
+      "multiple": true,
+      "flexColumn": true,
+      "invisible": true,
+      "noIsGoodsInfo": true,
+      "visibleId": ["other", "self"],
+      "errTips": "请上传网购或外卖订单",
+      "placeholder": "请上传网购或外卖订单",
+      "previewImage": "https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon_guarantee_pic3.png",
+      "previewImageViewUrl": "https://static-gamehub-client.sh28.vip/taogehao/resource/images/icon_guarantee_preview3.png"
+    },
+    {
+      "type": "radio",
+      "parentId": 3,
+      "label": "沟通渠道",
+      "required": true,
+      "name": "channel",
+      "value": "",
+      "options": [
+        {
+          "value": "offline",
+          "label": "自己私下联系"
+        }
+      ]
+    },
+    {
+      "type": "radio",
+      "parentId": 3,
+      "label": "中介担保费用支付方",
+      "required": true,
+      "name": "guarantee_payer",
+      "value": "",
+      "options": [
+        {
+          "value": "BUYER",
+          "label": "买家"
+        },
+        {
+          "value": "SELLER",
+          "label": "卖家"
+        }
+      ]
+    },
+    {
+      "type": "input",
+      "parentId": 4,
+      "label": "联系人手机",
+      "errTips": "联系人手机不能为空",
+      "placeholder": "请输入联系人手机",
+      "name": "user_phone",
+      "max": 11,
+      "value": "",
+      "desc": "",
+      "inputType": "number",
+      "required": true,
+      "rules": {
+        "rulesName": "rulePhone",
+        "ruleErrMsg": "请输入正确手机号"
+      }
+    },
+    {
+      "type": "input",
+      "parentId": 4,
+      "label": "联系人QQ",
+      "errTips": "联系人QQ不能为空",
+      "placeholder": "请输入联系人QQ",
+      "name": "user_QQ",
+      "value": "",
+      "desc": "",
+      "inputType": "number",
+      "required": true
+    },
+    {
+      "type": "input",
+      "parentId": 4,
+      "label": "联系人微信号",
+      "errTips": "联系人微信号不能为空",
+      "placeholder": "请输入联系人微信号",
+      "name": "user_wechat",
+      "value": "",
+      "desc": "",
+      "required": true
+    },
+    {
+      "type": "text",
+      "parentId": 4,
+      "label": "交易保障合同",
+      "errTips": "交易保障合同不能为空",
+      "placeholder": "请选择交易保障合同",
+      "name": "user_contract",
+      "value": "默认交易时签署",
+      "desc": "",
+      "required": true
+    }
+  ]
+}

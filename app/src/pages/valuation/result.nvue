@@ -1,0 +1,478 @@
+<template>
+  <global-view
+    bgImage="/static/images/valuation/result_bg.png"
+    :showBgImage="true"
+  >
+    <template #bar>
+      <u-navbar
+        bgColor="rgba(0,0,0,0)"
+        :placeholder="true"
+        :autoBack="true"
+        :safeAreaInsetTop="true"
+      />
+    </template>
+    <view class="result-box">
+      <view class="title-box">
+        <image
+          class="title-cover"
+          src="/static/images/valuation/result_title.png"
+        />
+      </view>
+      <view class="result-content">
+        <image
+          class="result-content-bg"
+          src="/static/images/valuation/result_content_bg.png"
+        />
+        <view class="result-content-top"
+          ><text class="text">预估市场价</text></view
+        >
+        <view class="result-content-bottom">
+          <view class="left">
+            <view class="price-box">
+              <text class="num">{{ product.estimated_price }}</text>
+              <text class="unit">¥</text>
+            </view>
+            <text class="msg">平台估价价格仅供参考</text>
+          </view>
+          <view class="right" @tap="handleDetail">
+            <text class="text">估价信息</text>
+            <image
+              class="icon"
+              src="/static/images/valuation/result_right.png"
+            />
+          </view>
+        </view>
+      </view>
+      <view class="result-tips" :style="{ paddingBottom: safeAreaPadding() }">
+        <view class="result-tips-bg"></view>
+        <view class="title">
+          <text class="text">官方寄售-预估价商品可一键寄售</text>
+        </view>
+        <view class="result-tips-item">
+          <view class="item-title">
+            <image class="num" src="/static/images/valuation/num1.png" />
+            <text class="tips">补充账号信息</text>
+          </view>
+          <view class="item-box">
+            <view class="item-line">
+              <image
+                class="line"
+                src="/static/images/valuation/result_line.png"
+              />
+            </view>
+            <view class="item-box-msg">
+              <view class="text-box none">
+                <text class="text">客服审核账号，挂售到淘个号平台。</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="result-tips-item">
+          <view class="item-title">
+            <image class="num" src="/static/images/valuation/num2.png" />
+            <text class="tips">付款完成交易</text>
+          </view>
+          <view class="item-box">
+            <view class="item-line">
+              <image
+                class="line"
+                src="/static/images/valuation/result_line.png"
+              />
+            </view>
+            <view class="item-box-msg">
+              <view class="text-box">
+                <text class="text"
+                  >买家确认交易并完成付款，系统自动拉群，客服群内引导完成交易流程。</text
+                >
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="result-tips-item">
+          <view class="item-title">
+            <image class="num" src="/static/images/valuation/num3.png" />
+            <text class="tips">确认收货和打款</text>
+          </view>
+          <view class="item-box">
+            <view class="item-line"> </view>
+            <view class="item-box-msg">
+              <view class="text-box">
+                <text class="text"
+                  >买卖双方签署合同，买家确认收货（或自动收货），放款至卖家账户余额。</text
+                >
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="result-price-box">
+          <view class="price-box">
+            <text class="text">预估市场价</text>
+            <text class="unit">¥</text>
+            <text class="price">{{ product.estimated_price }}</text>
+          </view>
+          <view class="price-tips">
+            <image
+              class="tips-bg"
+              src="/static/images/valuation/price_tips_bg.png"
+            />
+            <text class="text"
+              >平台估价价格仅供参考，一键寄售可自由挂售价格</text
+            >
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view
+      class="submit-btn-content"
+      :style="{ paddingBottom: safeAreaPadding() }"
+    >
+      <image class="shadow" src="/static/images/common/icon_shadow.png" />
+      <view class="bg" :style="{ height: safeAreaPadding() }"></view>
+      <view class="submit-btn-view">
+        <view class="submit-btn-operation">
+          <view
+            class="submit-btn"
+            :style="{
+              opacity: consignmentState ? '1' : '0.6',
+            }"
+            @tap="handlePut"
+          >
+            <text class="text">一键寄售</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </global-view>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { getEstimateProductInfo } from "@/api/product";
+import { getGameList } from "@/api/game";
+import GlobalView from "@/components/global-view/index.vue";
+import GoodsGameInfo from "@/pages/goods/components/goods-game-info.vue";
+import { ProductTypeEnum } from "@/enums/product";
+import { useUserStore } from "@/stores/user";
+import { safeAreaPadding } from "@/utils";
+import Events, { report } from "@/utils/report/report";
+
+const userStore = useUserStore();
+const consignmentState = ref(true);
+
+const product = ref({});
+onLoad(async (params) => {
+  const { data } = await getEstimateProductInfo(params.id);
+  const { data: list } = await getGameList({ game_ids_in: [params.gameId] });
+  consignmentState.value = list.find((item) => item.status);
+  product.value = data;
+});
+
+const handlePut = () => {
+  if (!consignmentState.value) {
+    uni.$main.toast("暂无法上架此游戏的账号，请尝试其他");
+    return;
+  }
+  report(Events.HOME_APPRAISE_CONSIGN, {
+    game_id: product.value.game_id,
+    game_name: product.value.game_name,
+  });
+  userStore.setGameHistory({
+    id: product.value.game_id,
+    game_name: product.value.game_name,
+    icon: product.value.game_icon,
+  });
+  uni.navigateTo({
+    url: `/pages/sell-account/sell-information-enter/index?type=${ProductTypeEnum.ACCOUNT}&estimate_id=${product.value.estimate_id}`,
+  });
+};
+
+const handleDetail = () => {
+  console.log(product.value);
+  uni.navigateTo({
+    url: `/pages/valuation/detail?id=${product.value.estimate_id}`,
+  });
+};
+</script>
+
+<style lang="scss">
+.result-box {
+  padding: 24rpx;
+  margin-bottom: 180rpx;
+  @include flex(column);
+  .title-box {
+    flex: 1;
+    align-items: center;
+    margin-bottom: $app-box-margin-bottom;
+    .title-cover {
+      width: 368rpx;
+      height: 72rpx;
+    }
+  }
+  .result-content {
+    flex: 1;
+    position: relative;
+    height: 258rpx;
+    .result-content-bg {
+      position: absolute;
+      right: -24rpx;
+      left: -24rpx;
+      top: -24rpx;
+      bottom: -24rpx;
+      height: 258rpx;
+    }
+    .result-content-top {
+      flex: 1;
+      height: 80rpx;
+      display: flex;
+      @include flex(column);
+      justify-content: center;
+      /* background-color: #f00; */
+      padding: 0 24rpx;
+      .text {
+        font-weight: 600;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+    }
+    .result-content-bottom {
+      height: 176rpx;
+      background: linear-gradient(to bottom, #e8fdff, #fff);
+      border-bottom-left-radius: $app-box-radius;
+      border-bottom-right-radius: $app-box-radius;
+      @include flex(row);
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24rpx;
+      .left {
+        .price-box {
+          @include flex(row);
+          align-items: center;
+          margin-bottom: $app-box-margin-bottom;
+          .num {
+            font-family: Barlow-ExtraBold;
+            font-weight: 800;
+            font-size: 56rpx;
+            color: #1a1a1a;
+            margin-right: 6rpx;
+          }
+          .unit {
+            font-weight: 800;
+            font-size: 32rpx;
+            color: #1a1a1a;
+          }
+        }
+        .msg {
+          font-weight: 400;
+          font-size: 24rpx;
+          color: #afafaf;
+        }
+      }
+      .right {
+        @include flex(row);
+        align-items: center;
+        position: relative;
+        .text {
+          font-weight: 400;
+          font-size: 32rpx;
+          color: $app-main-color;
+          margin-right: 6rpx;
+        }
+        .icon {
+          width: 16rpx;
+          height: 16rpx;
+        }
+      }
+    }
+  }
+  .result-tips {
+    background: #fff;
+    margin-top: -10rpx;
+    border-bottom-left-radius: $app-box-radius;
+    border-bottom-right-radius: $app-box-radius;
+    position: relative;
+    .result-tips-bg {
+      flex: 1;
+      height: 80rpx;
+      background: linear-gradient(to bottom, #e4fdfe, #fff);
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+    }
+    .title {
+      width: 548rpx;
+      height: 78rpx;
+      background: linear-gradient(to right, #44e0e0, #37b7d0);
+      @include flex(column);
+      justify-content: center;
+      align-items: center;
+      border-radius: 0rpx 12rpx 48rpx 0rpx;
+      margin-top: 40rpx;
+      margin-bottom: 16rpx;
+      .text {
+        font-weight: 500;
+        font-size: 32rpx;
+        color: #ffffff;
+      }
+    }
+    .result-tips-item {
+      padding: 24rpx;
+
+      .item-title {
+        @include flex(row);
+        align-items: center;
+        margin-bottom: 12rpx;
+        .num {
+          width: 36rpx;
+          height: 44rpx;
+          border-radius: 50%;
+          position: relative;
+          margin-right: 14rpx;
+        }
+        .tips {
+          font-weight: 600;
+          font-size: 32rpx;
+          color: #1a1a1a;
+          margin-top: 10rpx;
+        }
+      }
+      .item-box {
+        @include flex(row);
+        flex: 1;
+        .item-line {
+          margin: 0 15rpx;
+          margin-top: 12rpx;
+          .line {
+            width: 2rpx;
+            flex: 1;
+          }
+        }
+        .item-box-msg {
+          flex: 1;
+          flex-wrap: wrap;
+          background-color: #f4f5f6;
+          border-radius: 8rpx;
+          padding: 20rpx;
+          .text-box {
+            padding-bottom: 48rpx;
+            .text {
+              font-weight: 400;
+              font-size: 32rpx;
+              color: #1a1a1a;
+              line-height: 58rpx;
+            }
+            &.none {
+              padding-bottom: 0rpx;
+            }
+          }
+        }
+      }
+    }
+    .result-price-box {
+      flex: 1;
+      @include flex(column);
+      padding: 0 24rpx;
+      margin-top: 72rpx;
+      .price-box {
+        flex: 1;
+        @include flex(row);
+        align-items: center;
+        justify-content: center;
+        .text {
+          font-weight: 500;
+          font-size: 32rpx;
+          color: #1a1a1a;
+        }
+        .unit {
+          font-weight: 800;
+          font-size: 32rpx;
+          color: #38b8d1;
+          margin: 0 8rpx;
+        }
+        .price {
+          font-family: Barlow-ExtraBold;
+          font-weight: 800;
+          font-size: 56rpx;
+          color: #38b8d1;
+        }
+      }
+      .price-tips {
+        flex: 1;
+        height: 68rpx;
+        position: relative;
+        @include flex(column);
+        align-items: center;
+        justify-content: center;
+        margin-top: 16rpx;
+        margin-bottom: 48rpx;
+        .tips-bg {
+          position: absolute;
+          right: 0;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          height: 68rpx;
+        }
+        .text {
+          font-weight: 400;
+          font-size: 28rpx;
+          color: #ffffff;
+          margin-top: 6rpx;
+        }
+      }
+    }
+  }
+}
+.submit-btn-content {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  z-index: 1000;
+  .shadow {
+    height: 32rpx;
+    flex: 1;
+  }
+  .bg {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    flex: 1;
+    background-color: #fff;
+  }
+  .submit-btn-view {
+    background-color: #fff;
+    flex: 1;
+    .submit-btn-operation {
+      flex: 1;
+      display: flex;
+      padding: 24rpx;
+      .submit-btn {
+        flex: 1;
+        height: 96rpx;
+        background-color: $app-main-color;
+        border-radius: $app-box-radius;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: row;
+        .text {
+          font-weight: 600;
+          font-size: 32rpx;
+          color: #ffffff;
+          margin: 0 6rpx;
+          &.tips {
+            font-weight: 400;
+            font-size: 32rpx;
+            color: #ffffff;
+          }
+        }
+      }
+    }
+  }
+}
+</style>
